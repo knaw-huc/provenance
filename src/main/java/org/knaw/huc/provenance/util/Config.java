@@ -1,4 +1,4 @@
-package org.knaw.huc.provenance;
+package org.knaw.huc.provenance.util;
 
 import org.jdbi.v3.core.Jdbi;
 

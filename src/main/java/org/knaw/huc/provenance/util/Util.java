@@ -1,4 +1,4 @@
-package org.knaw.huc.provenance;
+package org.knaw.huc.provenance.util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
