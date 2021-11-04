@@ -1,9 +1,9 @@
-FROM openjdk:17-alpine AS build
+FROM maven:3-openjdk-17-slim AS build
 
 COPY . /app
 WORKDIR /app
 
-RUN ./mvnw install -DskipTests
+RUN mvn install -DskipTests
 RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../provenance-1.0.jar)
 
 FROM openjdk:17-alpine
