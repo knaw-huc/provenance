@@ -1,0 +1,18 @@
+body {
+    background: #f1f1f1;
+    font-family: sans-serif;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+}
+
+dt {
+    font-weight: bold;
+    margin-bottom: 0.3em;
+}
+
+dd {
+    margin: 0 0 0.9em 0;
+}

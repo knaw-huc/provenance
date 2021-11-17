@@ -1,6 +1,7 @@
 package org.knaw.huc.provenance;
 
 import io.javalin.Javalin;
+import io.javalin.http.staticfiles.Location;
 import org.knaw.huc.provenance.auth.AuthApi;
 import org.knaw.huc.provenance.prov.ProvenanceApi;
 import org.knaw.huc.provenance.util.Config;
@@ -16,11 +17,14 @@ public class Application {
             config.showJavalinBanner = false;
             config.enableDevLogging();
             config.accessManager(authApi::manage);
+            config.addStaticFiles("/static", Location.CLASSPATH);
         }).start(Config.PORT);
 
         app.routes(() -> {
-            post("/", provenanceApi::addProvenance, AuthApi.Role.USER);
-            put("/{id}", provenanceApi::updateProvenance, AuthApi.Role.USER);
+            post("/api", provenanceApi::addProvenance, AuthApi.Role.USER);
+            put("/api/{id}", provenanceApi::updateProvenance, AuthApi.Role.USER);
+            get("/api/{id}", provenanceApi::getProvenance, AuthApi.Role.ANONYMOUS);
+            get("/api/{id}/trail", provenanceApi::getProvenanceTrail, AuthApi.Role.ANONYMOUS);
         });
     }
 }

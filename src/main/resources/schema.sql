@@ -33,3 +33,6 @@ CREATE TABLE users
     email      text,
     who_person text
 );
+
+CREATE INDEX source_res_idx ON source USING hash(res);
+CREATE INDEX target_res_idx ON target USING hash(res);

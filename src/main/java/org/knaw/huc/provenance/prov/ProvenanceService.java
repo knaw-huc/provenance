@@ -5,70 +5,93 @@ import org.jdbi.v3.core.argument.NullArgument;
 import org.jdbi.v3.core.statement.PreparedBatch;
 
 import java.util.List;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
 
 import static java.sql.Types.CHAR;
 import static org.knaw.huc.provenance.util.Config.JDBI;
+import static org.knaw.huc.provenance.util.Util.isValidUri;
+import static org.knaw.huc.provenance.prov.ProvenanceInput.ProvenanceResourceInput.getInputList;
 
 public class ProvenanceService {
-    private static final String EXISTS_SQL = "SELECT id FROM provenance WHERE id = :id";
-
-    private static final String INSERT_SQL = """
-            INSERT INTO provenance (
-            who_person, where_location, when_time, how_software, how_delta,
-            why_motivation, why_provenance_schema) VALUES
-            (:who, :where, :when, :how_software, :how_delta, :why_motivation, :why_prov)""";
-
-    private static final String INSERT_SOURCE_SQL =
-            "INSERT INTO source (prov_id, res, rel) VALUES (:prov_id, :res, :rel)";
-
-    private static final String INSERT_TARGET_SQL =
-            "INSERT INTO target (prov_id, res, rel) VALUES (:prov_id, :res, :rel)";
-
-    private static final String UPDATE_SQL = """
-            UPDATE provenance SET
-            who_person = coalesce(:who, who_person),
-            where_location = coalesce(:where, where_location),
-            when_time = coalesce(:when, when_time),
-            how_software = coalesce(:how_software, how_software),
-            how_delta = coalesce(:how_delta, how_delta),
-            why_motivation = coalesce(:why_motivation, why_motivation),
-            why_provenance_schema = coalesce(:why_prov, why_provenance_schema)
-            WHERE id = :id""";
-
-    private static final String UPSERT_SOURCE_SQL = """ 
-            INSERT INTO source (prov_id, res, rel) VALUES (:prov_id, :res, :rel)
-            ON CONFLICT (prov_id, res) DO UPDATE SET rel = :rel""";
-
-    private static final String UPSERT_TARGET_SQL = """
-            INSERT INTO target (prov_id, res, rel) VALUES (:prov_id, :res, :rel)
-            ON CONFLICT (prov_id, res) DO UPDATE SET rel = :rel""";
-
-    public boolean recordExists(int id) {
+    public Optional<ProvenanceInput> getRecord(int id) {
         try (Handle handle = JDBI.open()) {
-            return handle.createQuery(EXISTS_SQL)
+            return handle.createQuery(ProvenanceSql.SELECT_SQL)
                     .bind("id", id)
-                    .mapTo(Integer.class)
-                    .findFirst()
-                    .isPresent();
+                    .map((rs, ctx) -> new ProvenanceInput(
+                            getInputList(
+                                    Arrays.asList((String[]) rs.getArray("source_res").getArray()),
+                                    Arrays.asList((String[]) rs.getArray("source_rel").getArray())
+                            ),
+                            getInputList(
+                                    Arrays.asList((String[]) rs.getArray("target_res").getArray()),
+                                    Arrays.asList((String[]) rs.getArray("target_rel").getArray())
+                            ),
+                            rs.getString("who_person"),
+                            rs.getString("where_location"),
+                            rs.getString("when_time"),
+                            rs.getString("how_software"),
+                            rs.getString("why_motivation")
+                    ))
+                    .findFirst();
         }
     }
 
+    public List<ProvenanceRelation> getTrail(int id) {
+        try (Handle handle = JDBI.open()) {
+            return handle.createQuery(ProvenanceSql.TRAIL_SQL)
+                    .bind("id", id)
+                    .map((rs, ctx) -> ProvenanceRelation.create(
+                            rs.getInt("prov_id"),
+                            rs.getString("source_res"), rs.getString("source_rel"),
+                            rs.getString("target_res"), rs.getString("target_rel")))
+                    .list();
+        }
+    }
+
+//    public Optional<ProvenanceTrail> getTrail(int id) {
+//        try (Handle handle = JDBI.open()) {
+//            ProvenanceTrail.ProvenanceTrailHolder holder = new ProvenanceTrail.ProvenanceTrailHolder();
+//            List<ProvenanceTrail> possibleRoots = handle.createQuery(ProvenanceSql.TRAIL_SQL)
+//                    .bind("id", id)
+//                    .map((rs, ctx) -> {
+//                        String source_res = rs.getString("source_res");
+//                        holder.index.putIfAbsent(source_res, new ProvenanceTrail(source_res));
+//                        ProvenanceTrail source = holder.index.get(source_res);
+//
+//                        String target_res = rs.getString("target_res");
+//                        holder.index.putIfAbsent(target_res, new ProvenanceTrail(target_res));
+//                        ProvenanceTrail target = holder.index.get(target_res);
+//
+//                        source.usedBy().add(target);
+//                        holder.children.add(target_res);
+//
+//                        return source;
+//                    }).list();
+//
+//            return possibleRoots.stream().filter(x -> !holder.children.contains(x.resource())).findFirst();
+//        }
+//    }
+
     public int createRecord(ProvenanceInput provenanceInput) {
         try (Handle handle = JDBI.open()) {
-            int id = handle.createUpdate(INSERT_SQL)
+            int id = handle.createUpdate(ProvenanceSql.INSERT_SQL)
                     .bind("who", provenanceInput.who())
                     .bind("where", provenanceInput.where())
                     .bind("when", provenanceInput.when())
-                    .bind("how_software", provenanceInput.how())
-                    .bind("how_delta", new NullArgument(CHAR))
+                    .bind("how_software", provenanceInput.how() != null && isValidUri(provenanceInput.how())
+                            ? provenanceInput.how() : new NullArgument(CHAR))
+                    .bind("how_delta", provenanceInput.how() != null && !isValidUri(provenanceInput.how())
+                            ? provenanceInput.how() : new NullArgument(CHAR))
                     .bind("why_motivation", provenanceInput.why())
                     .bind("why_prov", new NullArgument(CHAR))
                     .executeAndReturnGeneratedKeys()
                     .mapTo(Integer.class)
                     .one();
 
-            insertResources(handle, INSERT_SOURCE_SQL, id, provenanceInput.source());
-            insertResources(handle, INSERT_TARGET_SQL, id, provenanceInput.target());
+            insertResources(handle, ProvenanceSql.INSERT_SOURCE_SQL, id, provenanceInput.source());
+            insertResources(handle, ProvenanceSql.INSERT_TARGET_SQL, id, provenanceInput.target());
 
             return id;
         }
@@ -76,19 +99,21 @@ public class ProvenanceService {
 
     public void updateRecord(int id, ProvenanceInput provenanceInput) {
         try (Handle handle = JDBI.open()) {
-            handle.createUpdate(UPDATE_SQL)
+            handle.createUpdate(ProvenanceSql.UPDATE_SQL)
                     .bind("who", provenanceInput.who())
                     .bind("where", provenanceInput.where())
                     .bind("when", provenanceInput.when())
-                    .bind("how_software", provenanceInput.how())
-                    .bind("how_delta", new NullArgument(CHAR))
+                    .bind("how_software", provenanceInput.how() != null && isValidUri(provenanceInput.how())
+                            ? provenanceInput.how() : new NullArgument(CHAR))
+                    .bind("how_delta", provenanceInput.how() != null && !isValidUri(provenanceInput.how())
+                            ? provenanceInput.how() : new NullArgument(CHAR))
                     .bind("why_motivation", provenanceInput.why())
                     .bind("why_prov", new NullArgument(CHAR))
                     .bind("id", id)
                     .execute();
 
-            insertResources(handle, UPSERT_SOURCE_SQL, id, provenanceInput.source());
-            insertResources(handle, UPSERT_TARGET_SQL, id, provenanceInput.target());
+            insertResources(handle, ProvenanceSql.UPSERT_SOURCE_SQL, id, provenanceInput.source());
+            insertResources(handle, ProvenanceSql.UPSERT_TARGET_SQL, id, provenanceInput.target());
         }
     }
 

@@ -17,9 +17,9 @@ public class AuthApi {
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         String auth = ctx.header("Authorization");
         if (auth != null)
-            auth = auth.replaceFirst("^Basic: ", "");
+            auth = auth.replaceFirst("^Basic:", "");
 
-        User user = (auth != null) ? service.getUserById(auth) : null;
+        User user = (auth != null) ? service.getUserById(auth.trim()) : null;
         ctx.attribute("user", user);
 
         RouteRole role = (user != null) ? Role.USER : Role.ANONYMOUS;

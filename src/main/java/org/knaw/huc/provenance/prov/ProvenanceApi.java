@@ -1,15 +1,14 @@
 package org.knaw.huc.provenance.prov;
 
-import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
+import io.javalin.http.BadRequestResponse;
 import org.knaw.huc.provenance.auth.User;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
-import static org.knaw.huc.provenance.util.Util.isValidUri;
+import static org.knaw.huc.provenance.util.Util.*;
+import static org.knaw.huc.provenance.prov.ProvenanceInput.ProvenanceResourceInput.getInputList;
 
 public class ProvenanceApi {
     private final ProvenanceService service = new ProvenanceService();
@@ -20,7 +19,7 @@ public class ProvenanceApi {
         if (provenanceInput.source().isEmpty())
             throw new BadRequestResponse("Missing source");
 
-        validateUris(provenanceInput);
+        validateData(provenanceInput);
         int id = service.createRecord(provenanceInput);
 
         ctx.status(201);
@@ -30,15 +29,33 @@ public class ProvenanceApi {
 
     public void updateProvenance(Context ctx) {
         int id = ctx.pathParamAsClass("id", Integer.class).get();
-        if (!service.recordExists(id))
+        if (service.getRecord(id).isEmpty())
             throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
 
         ProvenanceInput provenanceInput = getProvenanceInputFromRequest(ctx);
 
-        validateUris(provenanceInput);
+        validateData(provenanceInput);
         service.updateRecord(id, provenanceInput);
 
         ctx.result("Updated provenance record with id " + id);
+    }
+
+    public void getProvenance(Context ctx) {
+        int id = ctx.pathParamAsClass("id", Integer.class).get();
+        Optional<ProvenanceInput> provenanceInput = service.getRecord(id);
+        if (provenanceInput.isEmpty())
+            throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
+
+        ctx.json(provenanceInput.get());
+    }
+
+    public void getProvenanceTrail(Context ctx) {
+        int id = ctx.pathParamAsClass("id", Integer.class).get();
+        List<ProvenanceRelation> provenanceTrail = service.getTrail(id);
+        if (provenanceTrail.isEmpty())
+            throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
+
+        ctx.json(provenanceTrail);
     }
 
     private static ProvenanceInput getProvenanceInputFromRequest(Context ctx) {
@@ -46,9 +63,9 @@ public class ProvenanceApi {
         if (who == null && ctx.attribute("user") instanceof User user)
             who = user.who();
 
-        List<ProvenanceInput.ProvenanceResourceInput> source = getProvenanceResourceInputs(
+        List<ProvenanceInput.ProvenanceResourceInput> source = getInputList(
                 ctx.formParams("source"), ctx.formParams("source_rel"));
-        List<ProvenanceInput.ProvenanceResourceInput> target = getProvenanceResourceInputs(
+        List<ProvenanceInput.ProvenanceResourceInput> target = getInputList(
                 ctx.formParams("target"), ctx.formParams("target_rel"));
 
         return new ProvenanceInput(
@@ -61,27 +78,19 @@ public class ProvenanceApi {
                 ctx.formParam("why"));
     }
 
-    private static List<ProvenanceInput.ProvenanceResourceInput> getProvenanceResourceInputs(
-            List<String> resources, List<String> relations) {
-        if (resources == null || relations == null)
-            return new ArrayList<>();
-
-        return IntStream.range(0, Math.min(resources.size(), relations.size()))
-                .mapToObj(i -> new ProvenanceInput.ProvenanceResourceInput(resources.get(i), relations.get(i)))
-                .collect(Collectors.toList());
-    }
-
-    private static void validateUris(ProvenanceInput provenanceInput) {
+    private static void validateData(ProvenanceInput provenanceInput) {
         if (provenanceInput.who() != null && !isValidUri(provenanceInput.who()))
             throw new BadRequestResponse("Invalid URI for 'who'");
 
         if (provenanceInput.where() != null && !isValidUri(provenanceInput.where()))
             throw new BadRequestResponse("Invalid URI for 'where'");
 
-        if (provenanceInput.when() != null && !isValidUri(provenanceInput.when()))
-            throw new BadRequestResponse("Invalid URI for 'when'");
+        if (provenanceInput.when() != null && !isValidUri(provenanceInput.when())
+                && !isValidTimestamp(provenanceInput.when()))
+            throw new BadRequestResponse("Invalid URI or timestamp for 'when'");
 
-        if (provenanceInput.how() != null && !isValidUri(provenanceInput.how()))
-            throw new BadRequestResponse("Invalid URI for 'how'");
+        if (provenanceInput.how() != null && !isValidUri(provenanceInput.how())
+                && !provenanceInput.how().trim().startsWith("+") && !provenanceInput.how().trim().startsWith("-"))
+            throw new BadRequestResponse("Invalid URI or delta for 'how'");
     }
 }

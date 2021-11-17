@@ -20,6 +20,7 @@ The parameters `who`, `where`, `when` and `how` should be valid URIs.
 ```bash
 curl \
   -X POST \
+  -H "Authorization: Basic: 7c7f89e7-5ce4-4b79-b475-538d5f9ddad0" \
   -d 'who=orcid:123' \
   -d 'source=md5:7815696ecbf1c96e6894b779456d330e' \
   -d 'source_rel=primary' \
@@ -41,6 +42,7 @@ The parameters `who`, `where`, `when` and `how` should be valid URIs.
 ```bash
 curl \
   -X PUT \
+  -H "Authorization: Basic: 7c7f89e7-5ce4-4b79-b475-538d5f9ddad0" \
   -d 'who=orcid:123' \
   -d 'source=md5:7815696ecbf1c96e6894b779456d330e' \
   -d 'source_rel=primary' \
