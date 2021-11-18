@@ -57,7 +57,11 @@ public interface ProvenanceSql {
                 ) x
             )
                         
-            SELECT DISTINCT prov_id, source_res, source_rel, target_res, target_rel FROM relations""";
+            SELECT DISTINCT prov_id, when_time, source_res, source_rel, target_res, target_rel
+            FROM relations
+            INNER JOIN provenance
+            ON provenance.id = relations.prov_id
+            """;
 
     String INSERT_SQL = """
             INSERT INTO provenance (

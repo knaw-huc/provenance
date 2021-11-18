@@ -16,11 +16,18 @@ async function withProvRecord() {
 }
 
 function createTree(trail) {
+    const timestamps = trail.map(rel => rel.time);
+
     const nodes = [...new Set(trail.flatMap(rel => [
         rel.source.resource,
         rel.target.resource,
         `prov_${rel.id}`
-    ]))].map(res => ({id: res, isResource: !res.startsWith('prov_'), isCurRecord: res === `prov_${provId}`}));
+    ]))].map(res => ({
+        id: res,
+        time: res.time,
+        isResource: !res.startsWith('prov_'),
+        isCurRecord: res === `prov_${provId}`
+    }));
 
     const links = trail.flatMap(rel => [
         {source: rel.source.resource, target: `prov_${rel.id}`},
@@ -30,6 +37,10 @@ function createTree(trail) {
     const rect = document.querySelector('.container').getBoundingClientRect();
     const width = Math.floor(rect.width);
     const height = 500;
+
+    const scale = d3.scaleLinear()
+        .domain([Math.min(...timestamps), Math.max(...timestamps)])
+        .range([0, width]);
 
     const svg = d3.select('#tree');
     svg.attr('width', width)
@@ -110,9 +121,8 @@ function createTree(trail) {
         .force('charge', d3.forceManyBody().strength(-400))
         .force('center', d3.forceCenter(width / 2, height / 2))
         .force('collide', d3.forceCollide().radius(d => d.isCurRecord ? 12 : 6))
-        .force('x', d3.forceX().x(d => d.isCurRecord ? Math.floor(width / 2) : 0))
-        .force('y', d3.forceY().y(d => !d.isResource ? Math.floor(height / 2) : 0 /*Math.floor(height / 2)*/))
-        //.on('tick', _ => drawTree(svg, width, height, nodes, links));
+        .force('x', d3.forceX().x(d => !d.isResource && d.time ? scale(d.time) : 0))
+        .force('y', d3.forceY().y(d => !d.isResource ? Math.floor(height / 2) : 0))
         .on('tick', _ => {
             link.attr('x1', d => d.source.x)
                 .attr('y1', d => d.source.y)
@@ -122,64 +132,6 @@ function createTree(trail) {
             node.attr('transform', d => `translate(${d.x},${d.y})`);
         });
 }
-
-// function drawTree(ctx, width, height, nodes, links) {
-//     ctx.save();
-//     ctx.clearRect(0, 0, width, height);
-//
-//     ctx.fillStyle = '#F1F1F1';
-//     ctx.fillRect(0, 0, width, height);
-//     ctx.fill();
-//
-//     for (const link of links) {
-//         ctx.beginPath();
-//         ctx.moveTo(link.source.x, link.source.y);
-//         ctx.lineTo(link.target.x, link.target.y);
-//         ctx.closePath();
-//
-//         ctx.lineWidth = 1;
-//         ctx.strokeStyle = 'black';
-//         ctx.stroke();
-//
-//         const radians = Math.atan((link.target.y - link.source.y) / (link.target.x - link.source.x))
-//             + ((link.target.x > link.source.x) ? 90 : -90) * Math.PI / 180;
-//
-//         ctx.save();
-//         ctx.beginPath();
-//         ctx.translate(link.target.x, link.target.y);
-//         ctx.rotate(radians);
-//         ctx.moveTo(0, 0);
-//         ctx.lineTo(3, 10);
-//         ctx.lineTo(-3, 10);
-//         ctx.closePath();
-//         ctx.restore();
-//
-//         ctx.fillStyle = 'black';
-//         ctx.fill();
-//     }
-//
-//     for (const node of nodes) {
-//         const size = node.isCurRecord ? 12 : 6;
-//
-//         ctx.beginPath();
-//         ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
-//
-//         ctx.lineWidth = 1;
-//         ctx.strokeStyle = 'black';
-//         ctx.stroke();
-//
-//         ctx.fillStyle = node.isResource ? 'black' : (node.isCurRecord ? '#F1F1F1' : 'white');
-//         ctx.fill();
-//
-//         if (node.isResource) {
-//             ctx.font = '12px sans-serif';
-//             ctx.fillStyle = 'black';
-//             ctx.fillText(node.id.substring(0, 30), node.x + 10, node.y + 10);
-//         }
-//     }
-//
-//     ctx.restore();
-// }
 
 function writeRecord(record) {
     const dl = document.querySelector('#record dl');

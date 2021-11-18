@@ -1,7 +1,11 @@
 package org.knaw.huc.provenance;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
+import io.javalin.plugin.json.JavalinJackson;
 import org.knaw.huc.provenance.auth.AuthApi;
 import org.knaw.huc.provenance.prov.ProvenanceApi;
 import org.knaw.huc.provenance.util.Config;
@@ -10,6 +14,10 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class Application {
     public static void main(String[] args) {
+        final ObjectMapper objectMapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .setDateFormat(new StdDateFormat().withColonInTimeZone(true));
+
         final AuthApi authApi = new AuthApi();
         final ProvenanceApi provenanceApi = new ProvenanceApi();
 
@@ -17,6 +25,7 @@ public class Application {
             config.showJavalinBanner = false;
             config.enableDevLogging();
             config.accessManager(authApi::manage);
+            config.jsonMapper(new JavalinJackson(objectMapper));
             config.addStaticFiles("/static", Location.CLASSPATH);
         }).start(Config.PORT);
 

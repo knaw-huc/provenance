@@ -1,9 +1,13 @@
 package org.knaw.huc.provenance.prov;
 
-public record ProvenanceRelation(int id, ProvenanceRelationResource source, ProvenanceRelationResource target) {
-    public static ProvenanceRelation create(int provId, String sourceResource, String sourceRelation,
+import java.time.LocalDateTime;
+
+public record ProvenanceRelation(int id, LocalDateTime time,
+                                 ProvenanceRelationResource source, ProvenanceRelationResource target) {
+    public static ProvenanceRelation create(int provId, LocalDateTime time,
+                                            String sourceResource, String sourceRelation,
                                             String targetResource, String targetRelation) {
-        return new ProvenanceRelation(provId,
+        return new ProvenanceRelation(provId, time,
                 new ProvenanceRelationResource(sourceResource, sourceRelation),
                 new ProvenanceRelationResource(targetResource, targetRelation));
     }

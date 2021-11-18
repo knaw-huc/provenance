@@ -4,6 +4,9 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.argument.NullArgument;
 import org.jdbi.v3.core.statement.PreparedBatch;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Optional;
@@ -11,6 +14,7 @@ import java.util.Set;
 
 import static java.sql.Types.CHAR;
 import static org.knaw.huc.provenance.util.Config.JDBI;
+import static org.knaw.huc.provenance.util.Util.isValidTimestamp;
 import static org.knaw.huc.provenance.util.Util.isValidUri;
 import static org.knaw.huc.provenance.prov.ProvenanceInput.ProvenanceResourceInput.getInputList;
 
@@ -44,35 +48,15 @@ public class ProvenanceService {
                     .bind("id", id)
                     .map((rs, ctx) -> ProvenanceRelation.create(
                             rs.getInt("prov_id"),
+                            isValidTimestamp(rs.getString("when_time"))
+                                    ? LocalDateTime.ofInstant(
+                                            Instant.parse(rs.getString("when_time")), ZoneOffset.UTC)
+                                    : null,
                             rs.getString("source_res"), rs.getString("source_rel"),
                             rs.getString("target_res"), rs.getString("target_rel")))
                     .list();
         }
     }
-
-//    public Optional<ProvenanceTrail> getTrail(int id) {
-//        try (Handle handle = JDBI.open()) {
-//            ProvenanceTrail.ProvenanceTrailHolder holder = new ProvenanceTrail.ProvenanceTrailHolder();
-//            List<ProvenanceTrail> possibleRoots = handle.createQuery(ProvenanceSql.TRAIL_SQL)
-//                    .bind("id", id)
-//                    .map((rs, ctx) -> {
-//                        String source_res = rs.getString("source_res");
-//                        holder.index.putIfAbsent(source_res, new ProvenanceTrail(source_res));
-//                        ProvenanceTrail source = holder.index.get(source_res);
-//
-//                        String target_res = rs.getString("target_res");
-//                        holder.index.putIfAbsent(target_res, new ProvenanceTrail(target_res));
-//                        ProvenanceTrail target = holder.index.get(target_res);
-//
-//                        source.usedBy().add(target);
-//                        holder.children.add(target_res);
-//
-//                        return source;
-//                    }).list();
-//
-//            return possibleRoots.stream().filter(x -> !holder.children.contains(x.resource())).findFirst();
-//        }
-//    }
 
     public int createRecord(ProvenanceInput provenanceInput) {
         try (Handle handle = JDBI.open()) {
