@@ -30,10 +30,10 @@ public class Application {
         }).start(Config.PORT);
 
         app.routes(() -> {
-            post("/api", provenanceApi::addProvenance, AuthApi.Role.USER);
-            put("/api/{id}", provenanceApi::updateProvenance, AuthApi.Role.USER);
-            get("/api/{id}", provenanceApi::getProvenance, AuthApi.Role.ANONYMOUS);
-            get("/api/{id}/trail", provenanceApi::getProvenanceTrail, AuthApi.Role.ANONYMOUS);
+            post("/prov", provenanceApi::addProvenance, AuthApi.Role.USER);
+            put("/prov/{id}", provenanceApi::updateProvenance, AuthApi.Role.USER);
+            get("/prov/{id}", provenanceApi::getProvenance, AuthApi.Role.ANONYMOUS);
+            get("/trail", provenanceApi::getProvenanceTrail, AuthApi.Role.ANONYMOUS);
         });
     }
 }

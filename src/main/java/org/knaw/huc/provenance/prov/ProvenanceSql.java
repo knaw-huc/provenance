@@ -18,50 +18,51 @@ public interface ProvenanceSql {
             ) target ON true
             WHERE id = :id""";
 
-    String TRAIL_SQL = """
-            WITH RECURSIVE relations(prov_id, source_res, source_rel, target_res, target_rel, is_cycle, prov_ids) AS (
-                SELECT source.prov_id, source.res, source.rel, target.res, target.rel, FALSE, ARRAY[source.prov_id]
+    String TRAIL_BACKWARD_SQL = """
+            WITH RECURSIVE backward(prov_id, source_res, source_rel, target_res, target_rel) AS (
+                SELECT source.prov_id, source.res, source.rel, target.res, target.rel
+                FROM target, LATERAL (
+                    SELECT *
+                    FROM source
+                    WHERE prov_id = target.prov_id
+                ) AS source
+                WHERE target.res = :resource
+
+                UNION ALL
+
+                SELECT source.prov_id, source.res, source.rel, target.res, target.rel
+                FROM target, LATERAL (
+                    SELECT *
+                    FROM source
+                    WHERE prov_id = target.prov_id
+                ) AS source, backward
+                WHERE target.res = backward.source_res
+            )
+
+            SELECT prov_id, source_res, source_rel, target_res, target_rel FROM backward""";
+
+    String TRAIL_FORWARD_SQL = """
+            WITH RECURSIVE forward(prov_id, source_res, source_rel, target_res, target_rel) AS (
+                SELECT source.prov_id, source.res, source.rel, target.res, target.rel
                 FROM source, LATERAL (
                     SELECT *
                     FROM target
                     WHERE prov_id = source.prov_id
                 ) AS target
-                WHERE source.prov_id = :id
-                        
+                WHERE source.res = :resource
+
                 UNION ALL
-                        
-                SELECT * FROM (
-                     WITH relations_inner AS (
-                         SELECT * FROM relations
-                     )
-                        
-                    SELECT source.prov_id, source.res, source.rel, target.res, target.rel,
-                           target.prov_id = ANY(prov_ids), prov_ids || source.prov_id
-                    FROM source, LATERAL (
-                        SELECT *
-                        FROM target
-                        WHERE prov_id = source.prov_id
-                    ) AS target, relations_inner
-                    WHERE source.res = relations_inner.target_res AND NOT is_cycle
-                        
-                    UNION ALL
-                        
-                    SELECT source.prov_id, source.res, source.rel, target.res, target.rel,
-                           source.prov_id = ANY(prov_ids), prov_ids || target.prov_id
-                    FROM target, LATERAL (
-                        SELECT *
-                        FROM source
-                        WHERE prov_id = target.prov_id
-                    ) AS source, relations_inner
-                    WHERE target.res = relations_inner.source_res AND NOT is_cycle
-                ) x
+
+                SELECT source.prov_id, source.res, source.rel, target.res, target.rel
+                FROM source, LATERAL (
+                    SELECT *
+                    FROM target
+                    WHERE prov_id = source.prov_id
+                ) AS target, forward
+                WHERE source.res = forward.target_res
             )
-                        
-            SELECT DISTINCT prov_id, when_time, source_res, source_rel, target_res, target_rel
-            FROM relations
-            INNER JOIN provenance
-            ON provenance.id = relations.prov_id
-            """;
+
+            SELECT prov_id, source_res, source_rel, target_res, target_rel FROM forward""";
 
     String INSERT_SQL = """
             INSERT INTO provenance (

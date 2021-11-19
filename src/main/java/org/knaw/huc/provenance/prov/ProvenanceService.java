@@ -4,17 +4,14 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.argument.NullArgument;
 import org.jdbi.v3.core.statement.PreparedBatch;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
 
 import static java.sql.Types.CHAR;
 import static org.knaw.huc.provenance.util.Config.JDBI;
-import static org.knaw.huc.provenance.util.Util.isValidTimestamp;
 import static org.knaw.huc.provenance.util.Util.isValidUri;
 import static org.knaw.huc.provenance.prov.ProvenanceInput.ProvenanceResourceInput.getInputList;
 
@@ -42,20 +39,58 @@ public class ProvenanceService {
         }
     }
 
-    public List<ProvenanceRelation> getTrail(int id) {
+    public ProvenanceTrail getTrail(String resource) {
         try (Handle handle = JDBI.open()) {
-            return handle.createQuery(ProvenanceSql.TRAIL_SQL)
-                    .bind("id", id)
-                    .map((rs, ctx) -> ProvenanceRelation.create(
-                            rs.getInt("prov_id"),
-                            isValidTimestamp(rs.getString("when_time"))
-                                    ? LocalDateTime.ofInstant(
-                                            Instant.parse(rs.getString("when_time")), ZoneOffset.UTC)
-                                    : null,
-                            rs.getString("source_res"), rs.getString("source_rel"),
-                            rs.getString("target_res"), rs.getString("target_rel")))
+            final ProvenanceTrail provenanceTrail = new ProvenanceTrail(resource);
+
+            handle.createQuery(ProvenanceSql.TRAIL_BACKWARD_SQL)
+                    .bind("resource", resource)
+                    .map((rs, ctx) -> buildTree(provenanceTrail.sourceAsChild(), rs))
                     .list();
+
+            handle.createQuery(ProvenanceSql.TRAIL_FORWARD_SQL)
+                    .bind("resource", resource)
+                    .map((rs, ctx) -> buildTree(provenanceTrail.targetAsChild(), rs))
+                    .list();
+
+            return provenanceTrail;
         }
+    }
+
+    private boolean buildTree(ProvenanceTrail.ProvenanceTrailChild root, ResultSet rs) throws SQLException {
+        int provId = rs.getInt("prov_id");
+        String source = rs.getString("source_res");
+        String target = rs.getString("target_res");
+
+        ProvenanceTrail.ProvenanceTrailChild current = root.findChild(source);
+        if (current == null)
+            current = root.findChild(target);
+
+        if (current == null ||
+                (!current.resource().equals(source) && !current.resource().equals(target)) ||
+                (current.provenanceId() == provId))
+            return false;
+
+        boolean isSource = current.resource().equals(source);
+        Optional<ProvenanceTrail.ProvenanceTrailChild> relation = current.relations()
+                .stream()
+                .filter(child -> child.resource().equals(isSource ? target : source))
+                .findFirst();
+
+        if (relation.isEmpty()) {
+            current.relations().add(
+                    new ProvenanceTrail.ProvenanceTrailChild(
+                            provId,
+                            isSource ? target : source,
+                            isSource ? rs.getString("target_rel")
+                                    : rs.getString("source_rel"),
+                            isSource ? rs.getString("source_rel")
+                                    : rs.getString("target_rel")));
+
+            return true;
+        }
+
+        return false;
     }
 
     public int createRecord(ProvenanceInput provenanceInput) {

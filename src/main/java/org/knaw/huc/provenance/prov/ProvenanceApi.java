@@ -50,10 +50,13 @@ public class ProvenanceApi {
     }
 
     public void getProvenanceTrail(Context ctx) {
-        int id = ctx.pathParamAsClass("id", Integer.class).get();
-        List<ProvenanceRelation> provenanceTrail = service.getTrail(id);
-        if (provenanceTrail.isEmpty())
-            throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
+        String resource = ctx.queryParam("resource");
+        if (resource == null)
+            throw new BadRequestResponse("No resource given");
+
+        ProvenanceTrail provenanceTrail = service.getTrail(resource.trim());
+        if (provenanceTrail == null)
+            throw new BadRequestResponse("Invalid resource: " + resource.trim());
 
         ctx.json(provenanceTrail);
     }
