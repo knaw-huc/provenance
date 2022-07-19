@@ -1,20 +1,29 @@
 'use strict';
 
-window.addEventListener('hashchange', withResource);
-withResource();
+const color = '#4682b4';
+const selectedColor = '#cfdeec';
 
-async function withResource() {
-    const resource = window.location.hash.substring(1);
-    const trail = await (await fetch(`/trail?resource=${encodeURIComponent(resource)}`)).json();
+window.addEventListener('hashchange', withData);
+withData();
 
-    createTree(resource, trail);
-    writeMetadata(resource, trail);
+async function withData() {
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    const trail = await (await fetch(`/trail?${params.toString()}`)).json();
+
+    createTree(trail);
+    writeMetadata(trail);
 }
 
-function createTree(resource, trail) {
+function createTree(trail) {
     const rect = document.querySelector('.container').getBoundingClientRect();
-    const width = Math.floor(rect.width);
+    const minWidth = Math.floor(rect.width);
     const height = 400;
+
+    const leftHierarchy = d3.hierarchy(trail.sourceRoot, d => d.relations);
+    const rightHierarchy = d3.hierarchy(trail.targetRoot, d => d.relations);
+
+    const totalHeight = leftHierarchy.height + rightHierarchy.height;
+    const width = Math.max(minWidth, totalHeight * 150);
 
     const svg = d3.select('#tree');
     svg.attr('width', width)
@@ -22,10 +31,18 @@ function createTree(resource, trail) {
         .selectAll('*')
         .remove();
 
-    const leftHierarchy = d3.hierarchy({resource: trail.resource, relations: trail.sources}, d => d.relations);
-    const rightHierarchy = d3.hierarchy({resource: trail.resource, relations: trail.targets}, d => d.relations);
+    svg.append('defs')
+        .append('marker')
+        .attr('id', 'arrowhead')
+        .attr('markerWidth', 5)
+        .attr('markerHeight', 4)
+        .attr('refX', 10)
+        .attr('refY', 2)
+        .attr('orient', 'auto')
+        .attr('fill', '#ccc')
+        .append('polygon')
+        .attr('points', '0 0, 5 2, 0 4');
 
-    const totalHeight = leftHierarchy.height + rightHierarchy.height;
     const leftWidth = ((width - 20) / totalHeight) * leftHierarchy.height;
     const rightWidth = ((width - 20) / totalHeight) * rightHierarchy.height;
 
@@ -46,116 +63,143 @@ function createTree(resource, trail) {
             .attr('fill', 'transparent')
             .attr('stroke', '#ccc')
             .attr('stroke-width', 2)
+            .attr(isLeft ? 'marker-end' : 'marker-start', 'url(#arrowhead)')
             .selectAll('path')
             .data(nodes.descendants().slice(1))
             .join('path')
-            .style('cursor', 'pointer')
-            .attr('data-prov-id', d => d.data.provenanceId)
-            .attr('d', d => `M${d.y},${d.x}C${(d.y + d.parent.y) / 2},${d.x} ${(d.y + d.parent.y) / 2},${d.parent.x} ${d.parent.y},${d.parent.x}`)
-            .on('click', (e, d) => {
-                document.getElementById('metadata')
-                    .dispatchEvent(new CustomEvent('provenance', {detail: d.data.provenanceId}));
-                e.preventDefault();
-            });
+            .attr('d', d => `M${d.y},${d.x}C${(d.y + d.parent.y) / 2},${d.x} ${(d.y + d.parent.y) / 2},${d.parent.x} ${d.parent.y},${d.parent.x}`);
 
-        const node = main.append('g')
+        const resourceNode = main.append('g')
             .attr('font-family', 'sans-serif')
             .attr('font-size', '8pt')
             .selectAll('g')
             .data(nodes.descendants())
             .join('g')
+            .filter(d => d.data.type === 'resource')
             .attr('transform', d => `translate(${d.y},${d.x})`);
 
-        node.append('circle')
+        resourceNode.append('circle')
             .attr('r', 8)
-            .attr('fill', d => d.data.resource === resource ? '#cfdeec' : '#fff')
-            .attr('stroke', '#4682b4')
+            .attr('fill', d => d.depth === 0 ? selectedColor : '#fff')
+            .attr('stroke', color)
             .attr('stroke-width', 2)
-            .filter(d => d.data.resource !== resource)
-            .on('mouseover', e => d3.select(e.target).style('cursor', 'pointer'))
-            .on('mouseout', e => d3.select(e.target).style('cursor', 'default'))
+            .filter(d => d.depth !== 0)
+            .style('cursor', 'pointer')
             .on('click', (e, d) => {
-                window.location.hash = d.data.resource;
+                window.location.hash = `resource=${encodeURIComponent(d.data.resource)}`;
                 e.preventDefault();
             });
 
-        node.append('text')
-            .attr('dy', '.40em')
-            .attr('x', d => !d.children && !isLeft ? -13 : 13)
-            .attr('text-anchor', d => !d.children && !isLeft ? 'end' : 'start')
-            .text(d => {
-                if (d.data.resource.length <= 50) return d.data.resource;
-                return '...' + d.data.resource.substring(d.data.resource.length - 50);
+        // resourceNode.append('text')
+        //     .attr('dy', '.40em')
+        //     .attr('x', d => !d.children && !isLeft ? -13 : 13)
+        //     .attr('text-anchor', d => !d.children && !isLeft ? 'end' : 'start')
+        //     .text(d => {
+        //         if (d.data.resource.length <= 50) return d.data.resource;
+        //         return '...' + d.data.resource.substring(d.data.resource.length - 50);
+        //     });
+
+        const provenanceNode = main.append('g')
+            .attr('font-family', 'sans-serif')
+            .attr('font-size', '8pt')
+            .selectAll('g')
+            .data(nodes.descendants())
+            .join('g')
+            .filter(d => d.data.type === 'provenance')
+            .attr('transform', d => `translate(${d.y},${d.x})`);
+
+        provenanceNode.append('rect')
+            .attr('width', 14)
+            .attr('height', 14)
+            .attr('fill', d => d.depth === 0 ? selectedColor : '#fff')
+            .attr('stroke', color)
+            .attr('stroke-width', 2)
+            .attr('transform', 'translate(0, -10) rotate(45)')
+            .filter(d => d.depth !== 0)
+            .style('cursor', 'pointer')
+            .on('click', (e, d) => {
+                window.location.hash = `provenance=${encodeURIComponent(d.data.id)}`;
+                e.preventDefault();
             });
     }
 }
 
-function writeMetadata(resource, trail) {
+async function writeMetadata(trail) {
     const root = document.getElementById('metadata');
     while (root.firstChild)
         root.removeChild(root.lastChild);
 
     const header = document.createElement('h1');
-    header.innerText = resource;
-
     const links = document.createElement('dl');
     root.append(header, links);
 
-    if (trail.sources.length > 0)
-        writeData(links, 'Is the result of', trail.sources.map(source => createResourceElem(root, source)));
+    if (trail.sourceRoot.type === 'resource') {
+        header.innerText = trail.sourceRoot.resource;
 
-    if (trail.targets.length > 0)
-        writeData(links, 'Is used as input for', trail.targets.map(target => createResourceElem(root, target)));
+        if (trail.sourceRoot.relations.length > 0)
+            writeData(links, 'Is the result of events with provenance identifier',
+                trail.sourceRoot.relations.map(source => createProvenanceElem(root, source)));
 
-    const provHeader = document.createElement('h2');
-    provHeader.innerText = 'Provenance';
-    provHeader.className = 'hidden';
+        if (trail.targetRoot.relations.length > 0)
+            writeData(links, 'Is used as input for events with provenance identifier',
+                trail.targetRoot.relations.map(target => createProvenanceElem(root, target)));
+    }
+    else {
+        header.innerText = 'Event with provenance id #' + trail.sourceRoot.id;
 
-    const prov = document.createElement('dl');
-    root.append(provHeader, prov);
+        if (trail.sourceRoot.relations.length > 0)
+            writeData(links, 'The event used the following resources as input',
+                trail.sourceRoot.relations.map(source => createResourceElem(root, source)));
 
-    root.addEventListener('provenance', async e => {
-        const provenanceId = e.detail;
-        if (prov.dataset.id === provenanceId)
-            return;
+        if (trail.targetRoot.relations.length > 0)
+            writeData(links, 'Which resulted in the following resources',
+                trail.targetRoot.relations.map(target => createResourceElem(root, target)));
+
+        const provHeader = document.createElement('h2');
+        provHeader.innerText = 'Provenance';
+
+        const prov = document.createElement('dl');
+        root.append(provHeader, prov);
 
         provHeader.className = '';
-        document.querySelectorAll(`[data-prov-id="${prov.dataset.id}"]`)
+        document.querySelectorAll(`[data-prov-id="${trail.sourceRoot.id}"]`)
             .forEach(link => link.setAttribute('stroke', '#ccc'));
 
         while (prov.firstChild)
             prov.removeChild(prov.lastChild);
 
-        prov.dataset.id = provenanceId;
+        prov.dataset.id = trail.sourceRoot.id;
 
-        document.querySelectorAll(`[data-prov-id="${provenanceId}"]`)
+        document.querySelectorAll(`[data-prov-id="${trail.sourceRoot.id}"]`)
             .forEach(link => link.setAttribute('stroke', '#4682b4'));
 
-        const record = await (await fetch(`/prov/${provenanceId}`)).json();
+        const record = await (await fetch(`/prov/${trail.sourceRoot.id}`)).json();
         if (record.who) writeData(prov, 'Who', record.who);
         if (record.where) writeData(prov, 'Where', record.where);
         if (record.when) writeData(prov, 'When', record.when);
         if (record.how) writeData(prov, 'How', record.how);
         if (record.why) writeData(prov, 'Why', record.why);
-    });
+    }
+}
+
+function createProvenanceElem(root, data) {
+    const resourceLink = document.createElement('a');
+    resourceLink.innerText = '#' + data.id;
+    resourceLink.setAttribute('href', `#provenance=${data.id}`);
+
+    const resourceElem = document.createElement('dd');
+    resourceElem.append(resourceLink);
+
+    return resourceElem;
 }
 
 function createResourceElem(root, data) {
     const resourceLink = document.createElement('a');
     resourceLink.innerText = data.resource;
-    resourceLink.setAttribute('href', `#${data.resource}`);
-
-    const provLink = document.createElement('a');
-    provLink.innerText = 'Show provenance';
-    provLink.className = 'provlink';
-    provLink.setAttribute('href', '');
-    provLink.addEventListener('click', e => {
-        root.dispatchEvent(new CustomEvent('provenance', {detail: data.provenanceId}));
-        e.preventDefault();
-    });
+    resourceLink.setAttribute('href', `#resource=${data.resource}`);
 
     const resourceElem = document.createElement('dd');
-    resourceElem.append(resourceLink, provLink);
+    resourceElem.append(resourceLink);
 
     return resourceElem;
 }

@@ -1,42 +1,74 @@
 package org.knaw.huc.provenance.prov;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
+import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
-public record ProvenanceTrail(String resource,
-                              Set<ProvenanceTrailChild> sources,
-                              Set<ProvenanceTrailChild> targets) {
-    public ProvenanceTrail(String resource) {
-        this(resource, new HashSet<>(), new HashSet<>());
-    }
-
-    public ProvenanceTrailChild sourceAsChild() {
-        return new ProvenanceTrailChild(0, resource, null, null, sources);
-    }
-
-    public ProvenanceTrailChild targetAsChild() {
-        return new ProvenanceTrailChild(0, resource, null, null, targets);
-    }
-
-    public final record ProvenanceTrailChild(int provenanceId, String resource,
-                                             String sourceRelation, String targetRelation,
-                                             Set<ProvenanceTrailChild> relations) {
-        public ProvenanceTrailChild(int provenanceId, String resource,
-                                    String sourceRelation, String targetRelation) {
-            this(provenanceId, resource, sourceRelation, targetRelation, new HashSet<>());
+public record ProvenanceTrail<T extends ProvenanceTrail.TrailNode<R>, R extends ProvenanceTrail.TrailNode<T>>(
+        T sourceRoot, T targetRoot) {
+    public record Provenance(int id, LocalDateTime date, Set<Relation<Resource>> relations)
+            implements TrailNode<Resource> {
+        public static Provenance create(int id, LocalDateTime date) {
+            return new Provenance(id, date, new HashSet<>());
         }
 
-        public ProvenanceTrailChild findChild(String resource) {
-            if (resource().equals(resource))
-                return this;
 
-            for (ProvenanceTrailChild relation : relations()) {
-                ProvenanceTrailChild child = relation.findChild(resource);
-                if (child != null)
-                    return child;
-            }
-
-            return null;
+        @Override
+        public String getType() {
+            return "provenance";
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Provenance other)
+                return Objects.equals(id, other.id());
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(id);
+        }
+    }
+
+    public record Resource(String resource, Integer provIdUpdate, Set<Relation<Provenance>> relations)
+            implements TrailNode<Provenance> {
+        public static Resource create(String resource) {
+            return new Resource(resource, null, new HashSet<>());
+        }
+
+        public Resource createNewVersion(int provIdUpdate) {
+            return new Resource(resource, provIdUpdate, new HashSet<>());
+        }
+
+        @Override
+        public String getType() {
+            return "resource";
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Resource other)
+                return Objects.equals(resource, other.resource()) && Objects.equals(provIdUpdate, other.provIdUpdate());
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(resource, provIdUpdate);
+        }
+    }
+
+    public record Relation<R>(String relation, @JsonUnwrapped R related) {
+    }
+
+    public interface TrailNode<T> {
+        String getType();
+
+        Set<Relation<T>> relations();
     }
 }
+

@@ -8,6 +8,10 @@ body {
     margin: auto;
 }
 
+.tree-container {
+    overflow-x: scroll;
+}
+
 h1 {
     color: #4682b4;
     font-size: 1.2em;

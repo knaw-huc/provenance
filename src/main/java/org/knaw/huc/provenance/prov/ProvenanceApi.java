@@ -1,9 +1,12 @@
 package org.knaw.huc.provenance.prov;
 
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import io.javalin.http.BadRequestResponse;
 import org.knaw.huc.provenance.auth.User;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,15 +53,34 @@ public class ProvenanceApi {
     }
 
     public void getProvenanceTrail(Context ctx) {
-        String resource = ctx.queryParam("resource");
-        if (resource == null)
-            throw new BadRequestResponse("No resource given");
+        try {
+            Validator<Integer> provenance = ctx.queryParamAsClass("provenance", Integer.class);
+            String resource = ctx.queryParam("resource");
 
-        ProvenanceTrail provenanceTrail = service.getTrail(resource.trim());
-        if (provenanceTrail == null)
-            throw new BadRequestResponse("Invalid resource: " + resource.trim());
+            if (!provenance.hasValue() && resource == null)
+                throw new BadRequestResponse("No provenance or resource given");
 
-        ctx.json(provenanceTrail);
+            ProvenanceTrail<?, ?> provenanceTrail;
+            if (provenance.hasValue()) {
+                provenanceTrail = service.getTrailForProvenance(provenance.get());
+                if (provenanceTrail == null)
+                    throw new BadRequestResponse("Invalid provenance id: " + provenance.get());
+            }
+            else {
+                LocalDateTime at = null;
+                String atFormatted = ctx.queryParam("at");
+                if (atFormatted != null)
+                    at = LocalDateTime.parse(atFormatted);
+
+                provenanceTrail = service.getTrailForResource(resource.trim(), at);
+                if (provenanceTrail == null)
+                    throw new BadRequestResponse("Invalid resource: " + resource.trim());
+            }
+
+            ctx.json(provenanceTrail);
+        } catch (DateTimeParseException ex) {
+            throw new BadRequestResponse("Incorrect date/time given; use the ISO-8601 format");
+        }
     }
 
     private static ProvenanceInput getProvenanceInputFromRequest(Context ctx) {

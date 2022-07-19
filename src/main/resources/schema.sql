@@ -11,20 +11,14 @@ CREATE TABLE provenance
     why_provenance_schema text
 );
 
-CREATE TABLE source
+CREATE TABLE relations
 (
-    prov_id integer NOT NULL REFERENCES provenance (id),
-    res     text,
-    rel     text,
-    PRIMARY KEY (prov_id, res)
-);
-
-CREATE TABLE target
-(
-    prov_id integer NOT NULL REFERENCES provenance (id),
-    res     text,
-    rel     text,
-    PRIMARY KEY (prov_id, res)
+    id        serial PRIMARY KEY,
+    prov_id   integer NOT NULL REFERENCES provenance (id),
+    is_source boolean NOT NULL,
+    res       text,
+    rel       text,
+    UNIQUE (prov_id, is_source, res)
 );
 
 CREATE TABLE users
@@ -34,5 +28,12 @@ CREATE TABLE users
     who_person text
 );
 
-CREATE INDEX source_res_idx ON source USING hash(res);
-CREATE INDEX target_res_idx ON target USING hash(res);
+CREATE INDEX res_idx ON relations USING hash(res);
+CREATE INDEX is_source_res_idx ON relations USING btree(is_source, res);
+
+CREATE VIEW prov_relations AS
+SELECT relations.id AS id, prov_id, is_source, res, rel, when_timestamp AS prov_timestamp
+FROM relations
+INNER JOIN provenance
+ON provenance.id = relations.prov_id;
+

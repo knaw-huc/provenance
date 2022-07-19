@@ -3,14 +3,16 @@ package org.knaw.huc.provenance.prov;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.argument.NullArgument;
 import org.jdbi.v3.core.statement.PreparedBatch;
+import org.knaw.huc.provenance.util.Pair;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Optional;
 
 import static java.sql.Types.CHAR;
+import static org.knaw.huc.provenance.prov.ProvenanceTrailMapper.Direction.*;
 import static org.knaw.huc.provenance.util.Config.JDBI;
 import static org.knaw.huc.provenance.util.Util.isValidUri;
 import static org.knaw.huc.provenance.prov.ProvenanceInput.ProvenanceResourceInput.getInputList;
@@ -39,58 +41,73 @@ public class ProvenanceService {
         }
     }
 
-    public ProvenanceTrail getTrail(String resource) {
+    public ProvenanceTrail<ProvenanceTrail.Resource, ProvenanceTrail.Provenance> getTrailForResource(
+            String resource, LocalDateTime at) {
         try (Handle handle = JDBI.open()) {
-            final ProvenanceTrail provenanceTrail = new ProvenanceTrail(resource);
-
-            handle.createQuery(ProvenanceSql.TRAIL_BACKWARD_SQL)
+            Pair<List<Integer>> startIds = handle
+                    .createQuery(ProvenanceSql.SELECT_RESOURCE_VERSIONS_RELATIONS_IDS_SQL)
                     .bind("resource", resource)
-                    .map((rs, ctx) -> buildTree(provenanceTrail.sourceAsChild(), rs))
-                    .list();
+                    .reduceResultSet(new Pair<>(new ArrayList<>(), new ArrayList<>()), (prev, rs, ctx) -> {
+                        if (at != null) {
+                            LocalDateTime fromTime = rs.getObject("from_time", LocalDateTime.class);
+                            LocalDateTime toTime = rs.getObject("to_time", LocalDateTime.class);
+                            if ((fromTime != null && !fromTime.isBefore(at)) || (toTime != null && !toTime.isAfter(at)))
+                                return prev;
+                        }
 
-            handle.createQuery(ProvenanceSql.TRAIL_FORWARD_SQL)
-                    .bind("resource", resource)
-                    .map((rs, ctx) -> buildTree(provenanceTrail.targetAsChild(), rs))
-                    .list();
+                        Integer[] ids = (Integer[]) rs.getArray("relation_ids").getArray();
+                        if (!rs.getBoolean("is_source") && (prev.first().size() == 0 || at == null))
+                            prev.first().addAll(Arrays.asList(ids));
+                        else if (rs.getBoolean("is_source") && (prev.second().size() == 0 || at == null))
+                            prev.second().addAll(Arrays.asList(ids));
 
-            return provenanceTrail;
+                        return prev;
+                    });
+
+            ProvenanceTrailMapper backwardsMapper = new ProvenanceTrailMapper(resource, BACKWARDS);
+            ProvenanceTrailMapper forwardsMapper = new ProvenanceTrailMapper(resource, FORWARDS);
+            mapBackwardAndForward(handle, startIds, backwardsMapper, forwardsMapper);
+
+            return new ProvenanceTrail<>(backwardsMapper.getResourceRoot(), forwardsMapper.getResourceRoot());
         }
     }
 
-    private boolean buildTree(ProvenanceTrail.ProvenanceTrailChild root, ResultSet rs) throws SQLException {
-        int provId = rs.getInt("prov_id");
-        String source = rs.getString("source_res");
-        String target = rs.getString("target_res");
+    public ProvenanceTrail<ProvenanceTrail.Provenance, ProvenanceTrail.Resource> getTrailForProvenance(int provId) {
+        try (Handle handle = JDBI.open()) {
+            Pair<List<Integer>> startIds = handle
+                    .createQuery(ProvenanceSql.SELECT_PROVENANCE_RELATIONS_IDS_SQL)
+                    .bind("provenanceId", provId)
+                    .reduceResultSet(new Pair<>(new ArrayList<>(), new ArrayList<>()), (prev, rs, ctx) -> {
+                        if (!rs.getBoolean("is_source"))
+                            prev.first().add(rs.getInt("id"));
+                        else if (rs.getBoolean("is_source"))
+                            prev.second().add(rs.getInt("id"));
+                        return prev;
+                    });
 
-        ProvenanceTrail.ProvenanceTrailChild current = root.findChild(source);
-        if (current == null)
-            current = root.findChild(target);
+            ProvenanceTrailMapper backwardsMapper = new ProvenanceTrailMapper(provId, BACKWARDS);
+            ProvenanceTrailMapper forwardsMapper = new ProvenanceTrailMapper(provId, FORWARDS);
+            mapBackwardAndForward(handle, startIds, backwardsMapper, forwardsMapper);
 
-        if (current == null ||
-                (!current.resource().equals(source) && !current.resource().equals(target)) ||
-                (current.provenanceId() == provId))
-            return false;
+            return new ProvenanceTrail<>(backwardsMapper.getProvenanceRoot(), forwardsMapper.getProvenanceRoot());
+        }
+    }
 
-        boolean isSource = current.resource().equals(source);
-        Optional<ProvenanceTrail.ProvenanceTrailChild> relation = current.relations()
-                .stream()
-                .filter(child -> child.resource().equals(isSource ? target : source))
-                .findFirst();
-
-        if (relation.isEmpty()) {
-            current.relations().add(
-                    new ProvenanceTrail.ProvenanceTrailChild(
-                            provId,
-                            isSource ? target : source,
-                            isSource ? rs.getString("target_rel")
-                                    : rs.getString("source_rel"),
-                            isSource ? rs.getString("source_rel")
-                                    : rs.getString("target_rel")));
-
-            return true;
+    private void mapBackwardAndForward(Handle handle, Pair<List<Integer>> startIds,
+                                       ProvenanceTrailMapper backwardsMapper, ProvenanceTrailMapper forwardsMapper) {
+        if (startIds.first().size() > 0) {
+            handle.createQuery(ProvenanceSql.TRAIL_BACKWARD_SQL)
+                    .bindList("ids", startIds.first())
+                    .map(backwardsMapper)
+                    .list();
         }
 
-        return false;
+        if (startIds.second().size() > 0) {
+            handle.createQuery(ProvenanceSql.TRAIL_FORWARD_SQL)
+                    .bindList("ids", startIds.second())
+                    .map(forwardsMapper)
+                    .list();
+        }
     }
 
     public int createRecord(ProvenanceInput provenanceInput) {
@@ -109,8 +126,8 @@ public class ProvenanceService {
                     .mapTo(Integer.class)
                     .one();
 
-            insertResources(handle, ProvenanceSql.INSERT_SOURCE_SQL, id, provenanceInput.source());
-            insertResources(handle, ProvenanceSql.INSERT_TARGET_SQL, id, provenanceInput.target());
+            insertResources(handle, ProvenanceSql.INSERT_RELATION_SQL, id, true, provenanceInput.source());
+            insertResources(handle, ProvenanceSql.INSERT_RELATION_SQL, id, false, provenanceInput.target());
 
             return id;
         }
@@ -131,16 +148,17 @@ public class ProvenanceService {
                     .bind("id", id)
                     .execute();
 
-            insertResources(handle, ProvenanceSql.UPSERT_SOURCE_SQL, id, provenanceInput.source());
-            insertResources(handle, ProvenanceSql.UPSERT_TARGET_SQL, id, provenanceInput.target());
+            insertResources(handle, ProvenanceSql.UPSERT_RELATION_SQL, id, true, provenanceInput.source());
+            insertResources(handle, ProvenanceSql.UPSERT_RELATION_SQL, id, false, provenanceInput.target());
         }
     }
 
-    private static void insertResources(Handle handle, String sql,
-                                        int id, List<ProvenanceInput.ProvenanceResourceInput> resourceInputs) {
+    private static void insertResources(Handle handle, String sql, int id, boolean isSource,
+                                        List<ProvenanceInput.ProvenanceResourceInput> resourceInputs) {
         PreparedBatch batch = handle.prepareBatch(sql);
         resourceInputs.forEach(target -> batch
                 .bind("prov_id", id)
+                .bind("is_source", isSource)
                 .bind("res", target.resource())
                 .bind("rel", target.relation())
                 .add());
