@@ -7,7 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ProvenanceTrailMapper implements RowMapper<Void> {
     public enum Direction {BACKWARDS, FORWARDS}
@@ -19,6 +21,8 @@ public class ProvenanceTrailMapper implements RowMapper<Void> {
     private final Map<Integer, ProvenanceTrail.Provenance> provenances;
     private final Map<String, ProvenanceTrail.Resource> resources;
 
+    private final Set<Integer> visited;
+
     public ProvenanceTrailMapper(String resource, Direction dir) {
         resourceRoot = ProvenanceTrail.Resource.create(resource);
         provenanceRoot = null;
@@ -26,6 +30,7 @@ public class ProvenanceTrailMapper implements RowMapper<Void> {
         direction = dir;
         provenances = new HashMap<>();
         resources = new HashMap<>();
+        visited = new HashSet<>();
 
         resources.put(resource, resourceRoot);
     }
@@ -37,6 +42,7 @@ public class ProvenanceTrailMapper implements RowMapper<Void> {
         direction = dir;
         provenances = new HashMap<>();
         resources = new HashMap<>();
+        visited = new HashSet<>();
     }
 
     public ProvenanceTrail.Resource getResourceRoot() {
@@ -47,8 +53,22 @@ public class ProvenanceTrailMapper implements RowMapper<Void> {
         return provenanceRoot;
     }
 
+    public void setVisited(Set<Integer> visited) {
+        this.visited.addAll(visited);
+    }
+
+    public Set<Integer> getVisited() {
+        return visited;
+    }
+
     @Override
     public Void map(ResultSet rs, StatementContext ctx) throws SQLException {
+        int id = rs.getInt("id");
+        if (visited.contains(id))
+            return null;
+
+        visited.add(id);
+
         int provId = rs.getInt("prov_id");
         LocalDateTime timestamp = rs.getObject("prov_timestamp", LocalDateTime.class);
 
@@ -59,9 +79,11 @@ public class ProvenanceTrailMapper implements RowMapper<Void> {
         if (provenanceRoot != null && provenanceRoot.id() == provId && provenanceRoot.date() == null)
             provenanceRoot = provenance;
 
-        System.out.printf("Mapping %d with %s <-> %s%n", provId, source.resource(), target.resource());
-
         if (source.equals(target)) {
+            ProvenanceTrail.Resource src = source;
+            if (provenance.relations().stream().anyMatch(rel -> rel.related().equals(src)))
+                return null;
+
             if (direction == Direction.FORWARDS)
                 target = createNewResourceVersion(target, provId);
             else

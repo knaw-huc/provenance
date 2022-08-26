@@ -50,8 +50,11 @@ public class ProvenanceService {
                     .reduceResultSet(new Pair<>(new ArrayList<>(), new ArrayList<>()), (prev, rs, ctx) -> {
                         if (at != null) {
                             LocalDateTime fromTime = rs.getObject("from_time", LocalDateTime.class);
+                            if (fromTime != null && !fromTime.isBefore(at) && !fromTime.isEqual(at))
+                                return prev;
+
                             LocalDateTime toTime = rs.getObject("to_time", LocalDateTime.class);
-                            if ((fromTime != null && !fromTime.isBefore(at)) || (toTime != null && !toTime.isAfter(at)))
+                            if (toTime != null && !toTime.isAfter(at) && !toTime.isEqual(at))
                                 return prev;
                         }
 
@@ -66,7 +69,7 @@ public class ProvenanceService {
 
             ProvenanceTrailMapper backwardsMapper = new ProvenanceTrailMapper(resource, BACKWARDS);
             ProvenanceTrailMapper forwardsMapper = new ProvenanceTrailMapper(resource, FORWARDS);
-            mapBackwardAndForward(handle, startIds, backwardsMapper, forwardsMapper);
+            mapBackwardAndForward(handle, startIds, false, backwardsMapper, forwardsMapper);
 
             return new ProvenanceTrail<>(backwardsMapper.getResourceRoot(), forwardsMapper.getResourceRoot());
         }
@@ -87,13 +90,13 @@ public class ProvenanceService {
 
             ProvenanceTrailMapper backwardsMapper = new ProvenanceTrailMapper(provId, BACKWARDS);
             ProvenanceTrailMapper forwardsMapper = new ProvenanceTrailMapper(provId, FORWARDS);
-            mapBackwardAndForward(handle, startIds, backwardsMapper, forwardsMapper);
+            mapBackwardAndForward(handle, startIds, true, backwardsMapper, forwardsMapper);
 
             return new ProvenanceTrail<>(backwardsMapper.getProvenanceRoot(), forwardsMapper.getProvenanceRoot());
         }
     }
 
-    private void mapBackwardAndForward(Handle handle, Pair<List<Integer>> startIds,
+    private void mapBackwardAndForward(Handle handle, Pair<List<Integer>> startIds, boolean isProvenance,
                                        ProvenanceTrailMapper backwardsMapper, ProvenanceTrailMapper forwardsMapper) {
         if (startIds.first().size() > 0) {
             handle.createQuery(ProvenanceSql.TRAIL_BACKWARD_SQL)
@@ -101,6 +104,9 @@ public class ProvenanceService {
                     .map(backwardsMapper)
                     .list();
         }
+
+        if (!isProvenance)
+            forwardsMapper.setVisited(backwardsMapper.getVisited());
 
         if (startIds.second().size() > 0) {
             handle.createQuery(ProvenanceSql.TRAIL_FORWARD_SQL)

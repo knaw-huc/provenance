@@ -48,7 +48,13 @@ public interface ProvenanceSql {
 
                    ORDER BY prov_timestamp
                ) a(x)
-            ) intervals ON (from_time IS NULL OR from_time < prov_timestamp) AND (to_time IS NULL OR to_time >= prov_timestamp)
+            ) intervals
+            ON (from_time IS NULL OR
+               (is_source AND prov_timestamp > from_time) OR
+               (NOT is_source AND prov_timestamp >= from_time))
+            AND (to_time IS NULL OR
+                (is_source AND prov_timestamp <= to_time) OR
+                (NOT is_source AND prov_timestamp < to_time))
             WHERE res = :resource
             GROUP BY intervals.from_time, intervals.to_time, is_source
             ORDER BY intervals.from_time, intervals.to_time""";
@@ -79,16 +85,17 @@ public interface ProvenanceSql {
                 WHERE target.res = backward.source_res AND target.is_source = false
             ) CYCLE id SET is_cycle USING path
 
-            SELECT prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
+            SELECT id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
             FROM (
                 SELECT a.*, row_number() OVER () AS sort
                 FROM backward AS a
                 LEFT JOIN backward AS b
                 ON a.id = b.id AND a.path != b.path AND cardinality(a.path) < cardinality(b.path)
-                AND NOT (a.path <@ b.path AND a.path @> b.path)
+                AND NOT (a.path <@ b.path AND a.path @> b.path) AND NOT b.is_cycle
                 WHERE b.id IS NULL AND NOT a.is_cycle
             ) AS x
-            ORDER BY sort""";
+            GROUP BY id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
+            ORDER BY MAX(sort)""";
 
     String TRAIL_FORWARD_SQL = """
             WITH RECURSIVE forward(id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel) AS (
@@ -111,16 +118,17 @@ public interface ProvenanceSql {
                 WHERE source.res = forward.target_res AND source.is_source = true
             ) CYCLE id SET is_cycle USING path
 
-            SELECT prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
+            SELECT id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
             FROM (
                 SELECT a.*, row_number() OVER () AS sort
                 FROM forward AS a
                 LEFT JOIN forward AS b
                 ON a.id = b.id AND a.path != b.path AND cardinality(a.path) < cardinality(b.path)
-                AND NOT (a.path <@ b.path AND a.path @> b.path)
+                AND NOT (a.path <@ b.path AND a.path @> b.path) AND NOT b.is_cycle
                 WHERE b.id IS NULL AND NOT a.is_cycle
             ) AS x
-            ORDER BY sort""";
+            GROUP BY id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
+            ORDER BY MAX(sort)""";
 
     String INSERT_SQL = """
             INSERT INTO provenance (

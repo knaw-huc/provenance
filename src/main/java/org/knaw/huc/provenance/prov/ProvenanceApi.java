@@ -70,7 +70,7 @@ public class ProvenanceApi {
                 LocalDateTime at = null;
                 String atFormatted = ctx.queryParam("at");
                 if (atFormatted != null)
-                    at = LocalDateTime.parse(atFormatted);
+                    at = parseIsoDate(atFormatted);
 
                 provenanceTrail = service.getTrailForResource(resource.trim(), at);
                 if (provenanceTrail == null)

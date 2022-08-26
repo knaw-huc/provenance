@@ -16,7 +16,7 @@ public class Application {
     public static void main(String[] args) {
         final ObjectMapper objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
-                .setDateFormat(new StdDateFormat().withColonInTimeZone(true));
+                .setDateFormat(new StdDateFormat());
 
         final AuthApi authApi = new AuthApi();
         final ProvenanceApi provenanceApi = new ProvenanceApi();

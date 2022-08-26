@@ -3,11 +3,71 @@
 const color = '#4682b4';
 const selectedColor = '#cfdeec';
 
+createLegend();
+
 window.addEventListener('hashchange', withData);
 withData();
 
+function createLegend() {
+    const svg = d3.select('#legend');
+    svg.attr('width', 130)
+        .attr('height', 50)
+        .selectAll('*')
+        .remove();
+
+    const resourceGroup = svg.append('g')
+        .attr('font-family', 'sans-serif')
+        .attr('font-size', '8pt')
+        .attr('transform', 'translate(15, 0)');
+
+    resourceGroup.append('circle')
+        .attr('cx', 0)
+        .attr('cy', 10)
+        .attr('r', 8)
+        .attr('fill', '#fff')
+        .attr('stroke', color)
+        .attr('stroke-width', 2);
+
+    resourceGroup.append('text')
+        .attr('x', 20)
+        .attr('y', 15)
+        .attr('text-anchor', 'start')
+        .text('Resource');
+
+    const provGroup = svg.append('g')
+        .attr('font-family', 'sans-serif')
+        .attr('font-size', '8pt')
+        .attr('transform', 'translate(15, 25)');
+
+    provGroup.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', 14)
+        .attr('height', 14)
+        .attr('fill', '#fff')
+        .attr('stroke', color)
+        .attr('stroke-width', 2)
+        .attr('transform', 'rotate(45)');
+
+    provGroup.append('text')
+        .attr('x', 20)
+        .attr('y', 15)
+        .attr('text-anchor', 'start')
+        .text('Provenance event');
+}
+
 async function withData() {
-    const params = new URLSearchParams(window.location.hash.substring(1));
+    let id = window.location.hash.substring(1);
+    let isResource = isNaN(parseInt(id));
+    let atTime = null;
+    if (isResource && id.indexOf(';@') > 0)
+        [id, atTime] = id.split(';@');
+
+    const params = new URLSearchParams();
+    params.append(isResource ? 'resource' : 'provenance', id);
+    if (atTime)
+        params.append('at', atTime);
+
     const trail = await (await fetch(`/trail?${params.toString()}`)).json();
 
     createTree(trail);
@@ -34,14 +94,14 @@ function createTree(trail) {
     svg.append('defs')
         .append('marker')
         .attr('id', 'arrowhead')
-        .attr('markerWidth', 5)
-        .attr('markerHeight', 4)
-        .attr('refX', 10)
-        .attr('refY', 2)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 6)
+        .attr('refX', 13)
+        .attr('refY', 3)
         .attr('orient', 'auto')
         .attr('fill', '#ccc')
         .append('polygon')
-        .attr('points', '0 0, 5 2, 0 4');
+        .attr('points', '0,0 8,3 0,6');
 
     const leftWidth = ((width - 20) / totalHeight) * leftHierarchy.height;
     const rightWidth = ((width - 20) / totalHeight) * rightHierarchy.height;
@@ -52,14 +112,18 @@ function createTree(trail) {
     const leftNodes = leftTree(leftHierarchy);
     const rightNodes = rightTree(rightHierarchy);
 
-    const main = svg.append('g').attr('transform', 'translate(10, 10)');
+    const main = svg.append('g')
+        .attr('font-family', 'sans-serif')
+        .attr('font-size', '8pt')
+        .attr('transform', 'translate(10, 10)');
+
     const leftMain = main.append('g').attr('transform', `translate(${leftWidth}, 0)`);
     const rightMain = main.append('g').attr('transform', `translate(${leftWidth}, 0)`);
 
     for (const [isLeft, nodes, main] of [[true, leftNodes, leftMain], [false, rightNodes, rightMain]]) {
         nodes.x = height / 2;
 
-        const link = main.append('g')
+        main.append('g')
             .attr('fill', 'transparent')
             .attr('stroke', '#ccc')
             .attr('stroke-width', 2)
@@ -67,15 +131,44 @@ function createTree(trail) {
             .selectAll('path')
             .data(nodes.descendants().slice(1))
             .join('path')
-            .attr('d', d => `M${d.y},${d.x}C${(d.y + d.parent.y) / 2},${d.x} ${(d.y + d.parent.y) / 2},${d.parent.x} ${d.parent.y},${d.parent.x}`);
+            .attr('d', d =>
+                `M${d.y},${d.x}` +
+                `L${d.y + 25},${d.x}` +
+                `C${(d.y + d.parent.y) / 2},${d.x}` +
+                ` ${(d.y + d.parent.y) / 2},${d.parent.x}` +
+                ` ${d.parent.y - 25},${d.parent.x}` +
+                `L${d.parent.y},${d.parent.x}`
+            );
+
+        main.append('g')
+            .attr('fill', 'transparent')
+            .attr('stroke', '#ccc')
+            .attr('stroke-width', 1)
+            .attr('stroke-dasharray', 4)
+            .selectAll('path')
+            .data(nodes.descendants().filter(d => d.data.type === 'resource' && d.data.provIdUpdate != null))
+            .join('path')
+            .attr('d', d => {
+                let cur = d.parent;
+                while (cur != null && cur.data.id !== d.data.provIdUpdate)
+                    cur = d.parent?.parent;
+
+                if (cur !== null)
+                    cur = cur.parent;
+
+                if (cur != null)
+                    return `M${d.y},${d.x}` +
+                        `C${d.y},${d.x - 50}` +
+                        ` ${cur.y},${cur.x - 50}` +
+                        ` ${cur.y},${cur.x}`
+
+                return '';
+            });
 
         const resourceNode = main.append('g')
-            .attr('font-family', 'sans-serif')
-            .attr('font-size', '8pt')
             .selectAll('g')
-            .data(nodes.descendants())
+            .data(nodes.descendants().filter(d => d.data.type === 'resource'))
             .join('g')
-            .filter(d => d.data.type === 'resource')
             .attr('transform', d => `translate(${d.y},${d.x})`);
 
         resourceNode.append('circle')
@@ -85,27 +178,28 @@ function createTree(trail) {
             .attr('stroke-width', 2)
             .filter(d => d.depth !== 0)
             .style('cursor', 'pointer')
+            .on('mouseover', (e, d) => document.getElementById('resource-info').innerText = d.data.resource)
+            .on('mouseout', _ => document.getElementById('resource-info').innerText = '')
             .on('click', (e, d) => {
-                window.location.hash = `resource=${encodeURIComponent(d.data.resource)}`;
+                const dates = [];
+                if (d.parent)
+                    dates.push(d.parent.data.date);
+                if (d.children)
+                    d.children.forEach(d => dates.push(d.data.date));
+                dates.sort();
+
+                window.location.hash = dates.length > 0 ? `${d.data.resource};@${dates[0]}` : `${d.data.resource}`;
                 e.preventDefault();
             });
 
-        // resourceNode.append('text')
-        //     .attr('dy', '.40em')
-        //     .attr('x', d => !d.children && !isLeft ? -13 : 13)
-        //     .attr('text-anchor', d => !d.children && !isLeft ? 'end' : 'start')
-        //     .text(d => {
-        //         if (d.data.resource.length <= 50) return d.data.resource;
-        //         return '...' + d.data.resource.substring(d.data.resource.length - 50);
-        //     });
+        resourceNode
+            .filter(d => d.depth === 0)
+            .attr('id', 'selected');
 
         const provenanceNode = main.append('g')
-            .attr('font-family', 'sans-serif')
-            .attr('font-size', '8pt')
             .selectAll('g')
-            .data(nodes.descendants())
+            .data(nodes.descendants().filter(d => d.data.type === 'provenance'))
             .join('g')
-            .filter(d => d.data.type === 'provenance')
             .attr('transform', d => `translate(${d.y},${d.x})`);
 
         provenanceNode.append('rect')
@@ -118,9 +212,26 @@ function createTree(trail) {
             .filter(d => d.depth !== 0)
             .style('cursor', 'pointer')
             .on('click', (e, d) => {
-                window.location.hash = `provenance=${encodeURIComponent(d.data.id)}`;
+                window.location.hash = `${d.data.id}`;
                 e.preventDefault();
             });
+
+        provenanceNode
+            .filter(d => d.depth === 0)
+            .attr('id', 'selected');
+
+        provenanceNode.append('text')
+            .attr('y', -5)
+            .attr('x', d => !d.children && !isLeft ? -13 : 13)
+            .attr('fill', color)
+            .attr('text-anchor', d => !d.children && !isLeft ? 'end' : 'start')
+            .text(d => `#${d.data.id}`);
+
+        document.getElementById('selected').scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+        });
     }
 }
 
@@ -185,7 +296,7 @@ async function writeMetadata(trail) {
 function createProvenanceElem(root, data) {
     const resourceLink = document.createElement('a');
     resourceLink.innerText = '#' + data.id;
-    resourceLink.setAttribute('href', `#provenance=${data.id}`);
+    resourceLink.setAttribute('href', `#${data.id}`);
 
     const resourceElem = document.createElement('dd');
     resourceElem.append(resourceLink);
@@ -196,7 +307,7 @@ function createProvenanceElem(root, data) {
 function createResourceElem(root, data) {
     const resourceLink = document.createElement('a');
     resourceLink.innerText = data.resource;
-    resourceLink.setAttribute('href', `#resource=${data.resource}`);
+    resourceLink.setAttribute('href', `#${data.resource}`);
 
     const resourceElem = document.createElement('dd');
     resourceElem.append(resourceLink);

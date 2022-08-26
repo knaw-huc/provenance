@@ -15,7 +15,6 @@ public record ProvenanceTrail<T extends ProvenanceTrail.TrailNode<R>, R extends 
             return new Provenance(id, date, new HashSet<>());
         }
 
-
         @Override
         public String getType() {
             return "provenance";

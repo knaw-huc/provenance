@@ -3,6 +3,8 @@ package org.knaw.huc.provenance.util;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 public class Util {
@@ -21,6 +23,14 @@ public class Util {
             return true;
         } catch (DateTimeParseException dtpe) {
             return false;
+        }
+    }
+
+    public static LocalDateTime parseIsoDate(String formattedDate) throws DateTimeParseException {
+        try {
+            return LocalDateTime.parse(formattedDate);
+        } catch (DateTimeParseException dte) {
+            return LocalDateTime.parse(formattedDate, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         }
     }
 }
