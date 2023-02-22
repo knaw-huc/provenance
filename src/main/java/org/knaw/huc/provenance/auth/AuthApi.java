@@ -1,6 +1,6 @@
 package org.knaw.huc.provenance.auth;
 
-import io.javalin.core.security.RouteRole;
+import io.javalin.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.UnauthorizedResponse;
@@ -14,7 +14,7 @@ public class AuthApi {
         ANONYMOUS, USER
     }
 
-    public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+    public void manage(Handler handler, Context ctx, Set<? extends RouteRole> routeRoles) throws Exception {
         String auth = ctx.header("Authorization");
         if (auth != null)
             auth = auth.replaceFirst("^Basic:", "");

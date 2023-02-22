@@ -288,8 +288,15 @@ async function writeMetadata(trail) {
         if (record.who) writeData(prov, 'Who', record.who);
         if (record.where) writeData(prov, 'Where', record.where);
         if (record.when) writeData(prov, 'When', record.when);
-        if (record.how) writeData(prov, 'How', record.how);
-        if (record.why) writeData(prov, 'Why', record.why);
+        if (record.howSoftware || record.howInit) {
+            if (record.howSoftware && record.howInit)
+                writeData(prov, 'How', record.howSoftware + ' ' + record.howInit);
+            else if (record.howSoftware)
+                writeData(prov, 'How', record.howSoftware);
+            else
+                writeData(prov, 'How', record.howInit);
+        }
+        if (record.whyMotivation) writeData(prov, 'Why', record.whyMotivation);
     }
 }
 

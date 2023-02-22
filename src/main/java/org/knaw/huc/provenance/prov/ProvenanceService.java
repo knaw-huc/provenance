@@ -1,7 +1,6 @@
 package org.knaw.huc.provenance.prov;
 
 import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.argument.NullArgument;
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.knaw.huc.provenance.util.Pair;
 
@@ -11,10 +10,8 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static java.sql.Types.CHAR;
-import static org.knaw.huc.provenance.prov.ProvenanceTrailMapper.Direction.*;
 import static org.knaw.huc.provenance.util.Config.JDBI;
-import static org.knaw.huc.provenance.util.Util.isValidUri;
+import static org.knaw.huc.provenance.prov.ProvenanceTrailMapper.Direction.*;
 import static org.knaw.huc.provenance.prov.ProvenanceInput.ProvenanceResourceInput.getInputList;
 
 public class ProvenanceService {
@@ -35,7 +32,10 @@ public class ProvenanceService {
                             rs.getString("where_location"),
                             rs.getString("when_time"),
                             rs.getString("how_software"),
-                            rs.getString("why_motivation")
+                            rs.getString("how_init"),
+                            rs.getString("how_delta"),
+                            rs.getString("why_motivation"),
+                            rs.getString("why_provenance_schema")
                     ))
                     .findFirst();
         }
@@ -122,12 +122,11 @@ public class ProvenanceService {
                     .bind("who", provenanceInput.who())
                     .bind("where", provenanceInput.where())
                     .bind("when", provenanceInput.when())
-                    .bind("how_software", provenanceInput.how() != null && isValidUri(provenanceInput.how())
-                            ? provenanceInput.how() : new NullArgument(CHAR))
-                    .bind("how_delta", provenanceInput.how() != null && !isValidUri(provenanceInput.how())
-                            ? provenanceInput.how() : new NullArgument(CHAR))
-                    .bind("why_motivation", provenanceInput.why())
-                    .bind("why_prov", new NullArgument(CHAR))
+                    .bind("how_software", provenanceInput.howSoftware())
+                    .bind("how_init", provenanceInput.howInit())
+                    .bind("how_delta", provenanceInput.howDelta())
+                    .bind("why_motivation", provenanceInput.whyMotivation())
+                    .bind("why_prov", provenanceInput.whyProvenanceSchema())
                     .executeAndReturnGeneratedKeys()
                     .mapTo(Integer.class)
                     .one();
@@ -145,12 +144,11 @@ public class ProvenanceService {
                     .bind("who", provenanceInput.who())
                     .bind("where", provenanceInput.where())
                     .bind("when", provenanceInput.when())
-                    .bind("how_software", provenanceInput.how() != null && isValidUri(provenanceInput.how())
-                            ? provenanceInput.how() : new NullArgument(CHAR))
-                    .bind("how_delta", provenanceInput.how() != null && !isValidUri(provenanceInput.how())
-                            ? provenanceInput.how() : new NullArgument(CHAR))
-                    .bind("why_motivation", provenanceInput.why())
-                    .bind("why_prov", new NullArgument(CHAR))
+                    .bind("how_software", provenanceInput.howSoftware())
+                    .bind("how_init", provenanceInput.howInit())
+                    .bind("how_delta", provenanceInput.howDelta())
+                    .bind("why_motivation", provenanceInput.whyMotivation())
+                    .bind("why_prov", provenanceInput.whyProvenanceSchema())
                     .bind("id", id)
                     .execute();
 

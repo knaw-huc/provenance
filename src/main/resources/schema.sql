@@ -6,6 +6,7 @@ CREATE TABLE provenance
     when_time             text,
     when_timestamp        timestamp DEFAULT now() NOT NULL,
     how_software          text,
+    how_init              text,
     how_delta             text,
     why_motivation        text,
     why_provenance_schema text
