@@ -14,7 +14,7 @@ more specifically `why_motivation`, `why_provenance_schema`), `source`, `source_
 Create a new provenance record. \
 The parameter `source` is required. Multiple `source` and `target` are allowed, with each having a
 corresponding `source_rel` and `target_rel`. \
-The parameters `who`, `where`, `when` and `how_software` should be valid URIs. \
+The parameters `who`, `where` and `how_software` should be valid URIs. \
 The parameter `how_delta` should be a valid delta using
 the [Unified format](https://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html#Detailed-Unified).
 
