@@ -59,9 +59,9 @@ public class ProvenanceService {
                         }
 
                         Integer[] ids = (Integer[]) rs.getArray("relation_ids").getArray();
-                        if (!rs.getBoolean("is_source") && (prev.first().size() == 0 || at == null))
+                        if (!rs.getBoolean("is_source") && (prev.first().isEmpty() || at == null))
                             prev.first().addAll(Arrays.asList(ids));
-                        else if (rs.getBoolean("is_source") && (prev.second().size() == 0 || at == null))
+                        else if (rs.getBoolean("is_source") && (prev.second().isEmpty() || at == null))
                             prev.second().addAll(Arrays.asList(ids));
 
                         return prev;
@@ -98,7 +98,7 @@ public class ProvenanceService {
 
     private void mapBackwardAndForward(Handle handle, Pair<List<Integer>> startIds, boolean isProvenance,
                                        ProvenanceTrailMapper backwardsMapper, ProvenanceTrailMapper forwardsMapper) {
-        if (startIds.first().size() > 0) {
+        if (!startIds.first().isEmpty()) {
             handle.createQuery(ProvenanceSql.TRAIL_BACKWARD_SQL)
                     .bindList("ids", startIds.first())
                     .map(backwardsMapper)
@@ -108,7 +108,7 @@ public class ProvenanceService {
         if (!isProvenance)
             forwardsMapper.setVisited(backwardsMapper.getVisited());
 
-        if (startIds.second().size() > 0) {
+        if (!startIds.second().isEmpty()) {
             handle.createQuery(ProvenanceSql.TRAIL_FORWARD_SQL)
                     .bindList("ids", startIds.second())
                     .map(forwardsMapper)
