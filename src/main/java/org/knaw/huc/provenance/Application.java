@@ -40,8 +40,7 @@ public class Application {
             get("/trail", provenanceApi::getProvenanceTrail, AuthApi.Role.ANONYMOUS);
         });
 
-        app.exception(JdbiException.class, (e, ctx) -> {
-            LOGGER.error("Database error with form params: " + ctx.formParamMap(), e);
-        });
+        app.exception(JdbiException.class, (e, ctx) ->
+                LOGGER.error("Database error with form params: " + ctx.formParamMap(), e));
     }
 }

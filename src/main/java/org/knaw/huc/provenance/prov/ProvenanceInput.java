@@ -45,6 +45,7 @@ public record ProvenanceInput(List<ProvenanceResourceInput> source, List<Provena
 
             return IntStream.range(0, Math.min(resources.size(), relations.size()))
                     .mapToObj(i -> new ProvenanceInput.ProvenanceResourceInput(resources.get(i), relations.get(i)))
+                    .distinct()
                     .collect(Collectors.toList());
         }
     }
