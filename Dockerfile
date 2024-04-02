@@ -1,4 +1,4 @@
-FROM maven:3-openjdk-17-slim AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 
 COPY . /app
 WORKDIR /app
@@ -6,7 +6,7 @@ WORKDIR /app
 RUN mvn install -DskipTests
 RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../provenance-1.0.jar)
 
-FROM openjdk:17-alpine
+FROM eclipse-temurin:21-jre
 
 COPY --from=build /app/target/dependency/ /app
 EXPOSE 8080

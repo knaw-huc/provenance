@@ -1,6 +1,5 @@
 package org.knaw.huc.provenance;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.Javalin;
@@ -19,28 +18,34 @@ public class Application {
     private static final Logger LOGGER = LoggerFactory.getLogger(Application.class);
 
     public static void main(String[] args) {
-        final ObjectMapper objectMapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .setDateFormat(new StdDateFormat());
-
         final AuthApi authApi = new AuthApi();
-        final ProvenanceApi provenanceApi = new ProvenanceApi();
 
         final Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;
-            config.accessManager(authApi::manage);
-            config.jsonMapper(new JavalinJackson(objectMapper));
+            config.jsonMapper(new JavalinJackson().updateMapper(mapper -> mapper
+                    .registerModule(new JavaTimeModule())
+                    .setDateFormat(new StdDateFormat())));
             config.staticFiles.add("/static", Location.CLASSPATH);
+            config.router.apiBuilder(Application::routes);
         }).start(Config.PORT);
 
-        app.routes(() -> {
-            post("/prov", provenanceApi::addProvenance, AuthApi.Role.USER);
-            put("/prov/{id}", provenanceApi::updateProvenance, AuthApi.Role.USER);
-            get("/prov/{id}", provenanceApi::getProvenance, AuthApi.Role.ANONYMOUS);
-            get("/trail", provenanceApi::getProvenanceTrail, AuthApi.Role.ANONYMOUS);
-        });
-
+        app.beforeMatched(authApi::beforeMatched);
         app.exception(JdbiException.class, (e, ctx) ->
                 LOGGER.error("Database error with form params: " + ctx.formParamMap(), e));
+    }
+
+    private static void routes() {
+        final ProvenanceApi provenanceApi = new ProvenanceApi();
+
+        path("/prov", () -> {
+            post(provenanceApi::addProvenance, AuthApi.Role.USER);
+
+            path("/{id}", () -> {
+                put(provenanceApi::updateProvenance, AuthApi.Role.USER);
+                get(provenanceApi::getProvenance, AuthApi.Role.ANONYMOUS);
+            });
+        });
+
+        get("/trail", provenanceApi::getProvenanceTrail, AuthApi.Role.ANONYMOUS);
     }
 }
