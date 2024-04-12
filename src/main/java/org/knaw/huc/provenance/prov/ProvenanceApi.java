@@ -2,11 +2,8 @@ package org.knaw.huc.provenance.prov;
 
 import io.javalin.http.Context;
 import io.javalin.http.BadRequestResponse;
-import io.javalin.validation.Validator;
 import org.knaw.huc.provenance.auth.User;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,36 +47,6 @@ public class ProvenanceApi {
             throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
 
         ctx.json(provenanceInput.get());
-    }
-
-    public void getProvenanceTrail(Context ctx) {
-        try {
-            Validator<Integer> provenance = ctx.queryParamAsClass("provenance", Integer.class);
-            String resource = ctx.queryParam("resource");
-
-            if (!provenance.hasValue() && resource == null)
-                throw new BadRequestResponse("No provenance or resource given");
-
-            ProvenanceTrail<?, ?> provenanceTrail;
-            if (provenance.hasValue()) {
-                provenanceTrail = service.getTrailForProvenance(provenance.get());
-                if (provenanceTrail == null)
-                    throw new BadRequestResponse("Invalid provenance id: " + provenance.get());
-            } else {
-                LocalDateTime at = null;
-                String atFormatted = ctx.queryParam("at");
-                if (atFormatted != null)
-                    at = parseIsoDate(atFormatted);
-
-                provenanceTrail = service.getTrailForResource(resource.trim(), at);
-                if (provenanceTrail == null)
-                    throw new BadRequestResponse("Invalid resource: " + resource.trim());
-            }
-
-            ctx.json(provenanceTrail);
-        } catch (DateTimeParseException ex) {
-            throw new BadRequestResponse("Incorrect date/time given; use the ISO-8601 format");
-        }
     }
 
     private static ProvenanceInput getProvenanceInputFromRequest(Context ctx) {

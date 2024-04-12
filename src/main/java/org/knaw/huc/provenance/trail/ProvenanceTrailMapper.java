@@ -1,4 +1,4 @@
-package org.knaw.huc.provenance.prov;
+package org.knaw.huc.provenance.trail;
 
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;

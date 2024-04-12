@@ -1,4 +1,4 @@
-package org.knaw.huc.provenance.prov;
+package org.knaw.huc.provenance.trail;
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 

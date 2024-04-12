@@ -13,13 +13,13 @@ body {
     overflow-x: scroll;
 }
 
-#legend {
+.legend {
     position: absolute;
     top: 0;
     right: 0;
 }
 
-#resource-info {
+.resource-info {
     position: absolute;
     top: 0;
     width: 100%;

@@ -1,15 +1,17 @@
-'use strict';
+import {select, hierarchy, tree} from "d3";
 
 const color = '#4682b4';
 const selectedColor = '#cfdeec';
 
-createLegend();
+export default function createGraph() {
+    createLegend();
 
-window.addEventListener('hashchange', withData);
-withData();
+    window.addEventListener('hashchange', withData);
+    withData();
+}
 
 function createLegend() {
-    const svg = d3.select('#legend');
+    const svg = select('.legend');
     svg.attr('width', 130)
         .attr('height', 50)
         .selectAll('*')
@@ -79,13 +81,13 @@ function createTree(trail) {
     const minWidth = Math.floor(rect.width);
     const height = 400;
 
-    const leftHierarchy = d3.hierarchy(trail.sourceRoot, d => d.relations);
-    const rightHierarchy = d3.hierarchy(trail.targetRoot, d => d.relations);
+    const leftHierarchy = hierarchy(trail.sourceRoot, d => d.relations);
+    const rightHierarchy = hierarchy(trail.targetRoot, d => d.relations);
 
     const totalHeight = leftHierarchy.height + rightHierarchy.height;
     const width = Math.max(minWidth, totalHeight * 150);
 
-    const svg = d3.select('#tree');
+    const svg = select('.tree');
     svg.attr('width', width)
         .attr('height', height)
         .selectAll('*')
@@ -106,8 +108,8 @@ function createTree(trail) {
     const leftWidth = ((width - 20) / totalHeight) * leftHierarchy.height;
     const rightWidth = ((width - 20) / totalHeight) * rightHierarchy.height;
 
-    const leftTree = d3.tree().size([height - 20, -leftWidth]);
-    const rightTree = d3.tree().size([height - 20, rightWidth]);
+    const leftTree = tree().size([height - 20, -leftWidth]);
+    const rightTree = tree().size([height - 20, rightWidth]);
 
     const leftNodes = leftTree(leftHierarchy);
     const rightNodes = rightTree(rightHierarchy);
