@@ -7,20 +7,20 @@ import org.knaw.huc.provenance.auth.User;
 import java.util.List;
 import java.util.Optional;
 
+import static org.knaw.huc.provenance.prov.ProvenanceResource.getResourceList;
 import static org.knaw.huc.provenance.util.Util.*;
-import static org.knaw.huc.provenance.prov.ProvenanceInput.ProvenanceResourceInput.getInputList;
 
 public class ProvenanceApi {
     private final ProvenanceService service = new ProvenanceService();
 
     public void addProvenance(Context ctx) {
-        ProvenanceInput provenanceInput = getProvenanceInputFromRequest(ctx);
+        Provenance provenance = getProvenanceFromRequest(ctx);
 
-        if (provenanceInput.source().isEmpty())
+        if (provenance.source().isEmpty())
             throw new BadRequestResponse("Missing source");
 
-        validateData(provenanceInput);
-        int id = service.createRecord(provenanceInput);
+        validateData(provenance);
+        int id = service.createRecord(provenance);
 
         ctx.status(201);
         ctx.header("Location", String.format("/%s", id));
@@ -32,36 +32,63 @@ public class ProvenanceApi {
         if (service.getRecord(id).isEmpty())
             throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
 
-        ProvenanceInput provenanceInput = getProvenanceInputFromRequest(ctx);
+        Provenance provenance = getProvenanceFromRequest(ctx);
 
-        validateData(provenanceInput);
-        service.updateRecord(id, provenanceInput);
+        validateData(provenance);
+        service.updateRecord(id, provenance);
 
         ctx.result("Updated provenance record with id " + id);
     }
 
     public void getProvenance(Context ctx) {
         int id = ctx.pathParamAsClass("id", Integer.class).get();
-        Optional<ProvenanceInput> provenanceInput = service.getRecord(id);
+        Optional<Provenance> provenanceInput = service.getRecord(id);
         if (provenanceInput.isEmpty())
             throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
 
         ctx.json(provenanceInput.get());
     }
 
-    private static ProvenanceInput getProvenanceInputFromRequest(Context ctx) {
+    public void getProvenanceForResource(Context ctx) {
+        String resource = ctx.queryParam("resource");
+        int limit = ctx.queryParamAsClass("limit", Integer.class).getOrDefault(10);
+        int offset = ctx.queryParamAsClass("offset", Integer.class).getOrDefault(0);
+        List<Provenance> provenanceList = service.getProvenanceForResource(resource, limit, offset);
+        if (provenanceList.isEmpty())
+            throw new BadRequestResponse("Invalid resource: " + resource);
+
+        ctx.json(provenanceList);
+    }
+
+    public void getResourcesForProvenance(Context ctx) {
+        int id = ctx.pathParamAsClass("id", Integer.class).get();
+        boolean isSource = ctx.queryParamAsClass("is_source", Boolean.class).get();
+        int limit = ctx.queryParamAsClass("limit", Integer.class).getOrDefault(10);
+        int offset = ctx.queryParamAsClass("offset", Integer.class).getOrDefault(0);
+        List<ProvenanceResource> resources = service.getResourcesForProvenance(id, isSource, limit, offset);
+        if (resources.isEmpty())
+            throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
+
+        ctx.json(resources);
+    }
+
+    public void getProvenanceTemplates(Context ctx) {
+        List<ProvenanceTemplate> provenanceTemplates = service.getProvenanceTemplates();
+        ctx.json(provenanceTemplates);
+    }
+
+    private static Provenance getProvenanceFromRequest(Context ctx) {
         String who = ctx.formParam("who");
         if (who == null && ctx.attribute("user") instanceof User user)
             who = user.who();
 
-        List<ProvenanceInput.ProvenanceResourceInput> source = getInputList(
+        List<ProvenanceResource> source = getResourceList(
                 ctx.formParams("source"), ctx.formParams("source_rel"));
-        List<ProvenanceInput.ProvenanceResourceInput> target = getInputList(
+        List<ProvenanceResource> target = getResourceList(
                 ctx.formParams("target"), ctx.formParams("target_rel"));
 
-        return ProvenanceInput.create(
-                source,
-                target,
+        return Provenance.create(
+                0,
                 who,
                 ctx.formParam("where"),
                 ctx.formParam("when"),
@@ -71,26 +98,27 @@ public class ProvenanceApi {
                 ctx.formParam("how_init"),
                 ctx.formParam("how_delta"),
                 ctx.formParam("why_motivation"),
-                ctx.formParam("why_provenance_schema"));
+                ctx.formParam("why_provenance_schema"),
+                source, target);
     }
 
-    private static void validateData(ProvenanceInput provenanceInput) {
-        if (provenanceInput.who() != null && !isValidUri(provenanceInput.who()))
+    private static void validateData(Provenance provenance) {
+        if (provenance.who() != null && !isValidUri(provenance.who()))
             throw new BadRequestResponse("Invalid URI for 'who'");
 
-        if (provenanceInput.where() != null && !isValidUri(provenanceInput.where()))
+        if (provenance.where() != null && !isValidUri(provenance.where()))
             throw new BadRequestResponse("Invalid URI for 'where'");
 
-        if (provenanceInput.when() != null && !isValidUri(provenanceInput.when())
-                && !isValidTimestamp(provenanceInput.when()))
+        if (provenance.when() != null && !isValidUri(provenance.when())
+            && !isValidTimestamp(provenance.when()))
             throw new BadRequestResponse("Invalid URI or timestamp for 'when'");
 
-        if (provenanceInput.howSoftware() != null && !isValidUri(provenanceInput.howSoftware()))
+        if (provenance.howSoftware() != null && !isValidUri(provenance.howSoftware()))
             throw new BadRequestResponse("Invalid URI 'how_software'");
 
-        if (provenanceInput.howDelta() != null &&
-                !provenanceInput.howDelta().trim().startsWith("+") &&
-                !provenanceInput.howDelta().trim().startsWith("-"))
+        if (provenance.howDelta() != null &&
+            !provenance.howDelta().trim().startsWith("+") &&
+            !provenance.howDelta().trim().startsWith("-"))
             throw new BadRequestResponse("Invalid delta for 'how_delta'");
     }
 }

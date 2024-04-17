@@ -1,0 +1,79 @@
+body {
+    background: #fff;
+    font-family: sans-serif;
+}
+
+.container {
+    position: relative;
+    width: 80%;
+    margin: auto;
+}
+
+h1 {
+    color: #4682b4;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+pre {
+    font-size: 0.7rem;
+    background-color: lightgrey;
+    padding: 0.5rem;
+    border-radius: 5px;
+    white-space: pre-wrap;
+}
+
+table {
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+}
+
+th, td {
+    width: auto;
+    padding: 0.8em;
+}
+
+thead {
+    font-weight: bold;
+    color: #4682b4;
+}
+
+tbody tr {
+    border-top: 1px solid gray;
+}
+
+tr.prov-row {
+    cursor: pointer;
+}
+
+.resources {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.resources ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.resources ul li {
+    margin: 0.5rem 0;
+}
+
+.resources .resource-arrow {
+    font-size: 1.6rem;
+    color: #4682b4;
+}
+
+.resources a {
+    text-decoration: none;
+}
+
+.resources .cur-resource {
+    font-weight: bold;
+    color: #4682b4;
+}

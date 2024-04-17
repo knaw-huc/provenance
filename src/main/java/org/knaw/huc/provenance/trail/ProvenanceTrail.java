@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-public record ProvenanceTrail<T extends ProvenanceTrail.TrailNode<R>, R extends ProvenanceTrail.TrailNode<T>>(
+record ProvenanceTrail<T extends ProvenanceTrail.TrailNode<R>, R extends ProvenanceTrail.TrailNode<T>>(
         T sourceRoot, T targetRoot) {
     public record Provenance(int id, LocalDateTime date, Set<Relation<Resource>> relations)
             implements TrailNode<Resource> {

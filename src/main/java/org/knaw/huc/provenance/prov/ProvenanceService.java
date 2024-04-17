@@ -4,82 +4,94 @@ import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.statement.PreparedBatch;
 
 import java.util.List;
-import java.util.Arrays;
 import java.util.Optional;
 
 import static org.knaw.huc.provenance.util.Config.JDBI;
-import static org.knaw.huc.provenance.prov.ProvenanceInput.ProvenanceResourceInput.getInputList;
 
-public class ProvenanceService {
-    public Optional<ProvenanceInput> getRecord(int id) {
+class ProvenanceService {
+    public Optional<Provenance> getRecord(int id) {
         try (Handle handle = JDBI.open()) {
-            return handle.createQuery(ProvenanceSql.SELECT_SQL)
+            return handle.createQuery(ProvenanceSql.SELECT_BY_PROV_SQL)
                     .bind("id", id)
-                    .map((rs, ctx) -> new ProvenanceInput(
-                            getInputList(
-                                    Arrays.asList((String[]) rs.getArray("source_res").getArray()),
-                                    Arrays.asList((String[]) rs.getArray("source_rel").getArray())
-                            ),
-                            getInputList(
-                                    Arrays.asList((String[]) rs.getArray("target_res").getArray()),
-                                    Arrays.asList((String[]) rs.getArray("target_rel").getArray())
-                            ),
-                            rs.getString("who_person"),
-                            rs.getString("where_location"),
-                            rs.getString("when_time"),
-                            rs.getString("how_software"),
-                            rs.getString("how_init"),
-                            rs.getString("how_delta"),
-                            rs.getString("why_motivation"),
-                            rs.getString("why_provenance_schema")
-                    ))
+                    .map(Provenance::mapFromResultSet)
                     .findFirst();
         }
     }
 
-    public int createRecord(ProvenanceInput provenanceInput) {
+    public List<Provenance> getProvenanceForResource(String resource, int limit, int offset) {
+        try (Handle handle = JDBI.open()) {
+            return handle.createQuery(ProvenanceSql.SELECT_BY_RESOURCE_SQL)
+                    .bind("resource", resource)
+                    .bind("limit", limit)
+                    .bind("offset", offset)
+                    .map(Provenance::mapFromResultSet)
+                    .collectIntoList();
+        }
+    }
+
+    public List<ProvenanceResource> getResourcesForProvenance(int id, boolean isSource, int limit, int offset) {
+        try (Handle handle = JDBI.open()) {
+            return handle.createQuery(ProvenanceSql.SELECT_RESOURCES_SQL)
+                    .bind("id", id)
+                    .bind("is_source", isSource)
+                    .bind("limit", limit)
+                    .bind("offset", offset)
+                    .map(ProvenanceResource::mapFromResultSet)
+                    .collectIntoList();
+        }
+    }
+
+    public List<ProvenanceTemplate> getProvenanceTemplates() {
+        try (Handle handle = JDBI.open()) {
+            return handle.createQuery(ProvenanceSql.SELECT_TEMPLATES_SQL)
+                    .map(ProvenanceTemplate::mapFromResultSet)
+                    .collectIntoList();
+        }
+    }
+
+    public int createRecord(Provenance provenance) {
         try (Handle handle = JDBI.open()) {
             int id = handle.createUpdate(ProvenanceSql.INSERT_SQL)
-                    .bind("who", provenanceInput.who())
-                    .bind("where", provenanceInput.where())
-                    .bind("when", provenanceInput.when())
-                    .bind("how_software", provenanceInput.howSoftware())
-                    .bind("how_init", provenanceInput.howInit())
-                    .bind("how_delta", provenanceInput.howDelta())
-                    .bind("why_motivation", provenanceInput.whyMotivation())
-                    .bind("why_prov", provenanceInput.whyProvenanceSchema())
+                    .bind("who", provenance.who())
+                    .bind("where", provenance.where())
+                    .bind("when", provenance.when())
+                    .bind("how_software", provenance.howSoftware())
+                    .bind("how_init", provenance.howInit())
+                    .bind("how_delta", provenance.howDelta())
+                    .bind("why_motivation", provenance.whyMotivation())
+                    .bind("why_prov", provenance.whyProvenanceSchema())
                     .executeAndReturnGeneratedKeys()
                     .mapTo(Integer.class)
                     .one();
 
-            insertResources(handle, ProvenanceSql.INSERT_RELATION_SQL, id, true, provenanceInput.source());
-            insertResources(handle, ProvenanceSql.INSERT_RELATION_SQL, id, false, provenanceInput.target());
+            insertResources(handle, ProvenanceSql.INSERT_RELATION_SQL, id, true, provenance.source());
+            insertResources(handle, ProvenanceSql.INSERT_RELATION_SQL, id, false, provenance.target());
 
             return id;
         }
     }
 
-    public void updateRecord(int id, ProvenanceInput provenanceInput) {
+    public void updateRecord(int id, Provenance provenance) {
         try (Handle handle = JDBI.open()) {
             handle.createUpdate(ProvenanceSql.UPDATE_SQL)
-                    .bind("who", provenanceInput.who())
-                    .bind("where", provenanceInput.where())
-                    .bind("when", provenanceInput.when())
-                    .bind("how_software", provenanceInput.howSoftware())
-                    .bind("how_init", provenanceInput.howInit())
-                    .bind("how_delta", provenanceInput.howDelta())
-                    .bind("why_motivation", provenanceInput.whyMotivation())
-                    .bind("why_prov", provenanceInput.whyProvenanceSchema())
+                    .bind("who", provenance.who())
+                    .bind("where", provenance.where())
+                    .bind("when", provenance.when())
+                    .bind("how_software", provenance.howSoftware())
+                    .bind("how_init", provenance.howInit())
+                    .bind("how_delta", provenance.howDelta())
+                    .bind("why_motivation", provenance.whyMotivation())
+                    .bind("why_prov", provenance.whyProvenanceSchema())
                     .bind("id", id)
                     .execute();
 
-            insertResources(handle, ProvenanceSql.UPSERT_RELATION_SQL, id, true, provenanceInput.source());
-            insertResources(handle, ProvenanceSql.UPSERT_RELATION_SQL, id, false, provenanceInput.target());
+            insertResources(handle, ProvenanceSql.UPSERT_RELATION_SQL, id, true, provenance.source());
+            insertResources(handle, ProvenanceSql.UPSERT_RELATION_SQL, id, false, provenance.target());
         }
     }
 
     private static void insertResources(Handle handle, String sql, int id, boolean isSource,
-                                        List<ProvenanceInput.ProvenanceResourceInput> resourceInputs) {
+                                        List<ProvenanceResource> resourceInputs) {
         PreparedBatch batch = handle.prepareBatch(sql);
         resourceInputs.forEach(target -> batch
                 .bind("prov_id", id)

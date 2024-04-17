@@ -25,8 +25,8 @@ public class Application {
             config.jsonMapper(new JavalinJackson().updateMapper(mapper -> mapper
                     .registerModule(new JavaTimeModule())
                     .setDateFormat(new StdDateFormat())));
-            config.spaRoot.addFile("/", "/static");
             config.staticFiles.add("/static");
+            config.spaRoot.addFile("/", "/static");
             config.router.apiBuilder(Application::routes);
         }).start(Config.PORT);
 
@@ -40,11 +40,17 @@ public class Application {
     private static void routes() {
         path("/prov", () -> {
             final ProvenanceApi provenanceApi = new ProvenanceApi();
+
+            get(provenanceApi::getProvenanceForResource, ANONYMOUS);
             post(provenanceApi::addProvenance, USER);
 
+            get("/templates", provenanceApi::getProvenanceTemplates, ANONYMOUS);
+
             path("/{id}", () -> {
-                put(provenanceApi::updateProvenance, USER);
                 get(provenanceApi::getProvenance, ANONYMOUS);
+                put(provenanceApi::updateProvenance, USER);
+
+                get("/resources", provenanceApi::getResourcesForProvenance, ANONYMOUS);
             });
         });
 

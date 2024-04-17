@@ -6,6 +6,7 @@ export default defineConfig({
     server: {
         proxy: {
             '/prov': 'http://127.0.0.1:8080',
+            '/resource': 'http://127.0.0.1:8080',
             '/trail': 'http://127.0.0.1:8080',
         }
     }

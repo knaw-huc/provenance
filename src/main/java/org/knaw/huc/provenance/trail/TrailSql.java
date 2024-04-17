@@ -1,6 +1,6 @@
 package org.knaw.huc.provenance.trail;
 
-public interface TrailSql {
+interface TrailSql {
     String SELECT_RESOURCE_VERSIONS_RELATIONS_IDS_SQL = """
             -- Using the collected time intervals, find all the resource relations within the given time intervals
             SELECT from_time, to_time, is_source, array_agg(id) AS relation_ids

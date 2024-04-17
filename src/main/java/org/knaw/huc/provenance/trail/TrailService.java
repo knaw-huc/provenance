@@ -12,7 +12,7 @@ import static org.knaw.huc.provenance.trail.ProvenanceTrailMapper.Direction.BACK
 import static org.knaw.huc.provenance.trail.ProvenanceTrailMapper.Direction.FORWARDS;
 import static org.knaw.huc.provenance.util.Config.JDBI;
 
-public class TrailService {
+class TrailService {
     public ProvenanceTrail<ProvenanceTrail.Resource, ProvenanceTrail.Provenance> getTrailForResource(
             String resource, LocalDateTime at) {
         try (Handle handle = JDBI.open()) {

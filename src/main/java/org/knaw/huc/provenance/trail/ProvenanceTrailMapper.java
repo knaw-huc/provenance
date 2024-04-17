@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class ProvenanceTrailMapper implements RowMapper<Void> {
+class ProvenanceTrailMapper implements RowMapper<Void> {
     public enum Direction {BACKWARDS, FORWARDS}
 
     private final ProvenanceTrail.Resource resourceRoot;

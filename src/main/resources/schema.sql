@@ -1,3 +1,8 @@
+CREATE TYPE provenance_column AS ENUM (
+    'who_person', 'where_location', 'when_time', 'how_software', 'how_init',
+    'how_delta', 'why_motivation', 'why_provenance_schema'
+);
+
 CREATE TABLE provenance
 (
     id                    serial PRIMARY KEY,
@@ -22,6 +27,16 @@ CREATE TABLE relations
     UNIQUE (prov_id, is_source, res)
 );
 
+CREATE TABLE provenance_templates
+(
+    id                serial PRIMARY KEY,
+    provenance_column provenance_column NOT NULL,
+    provenance_value  text              NOT NULL,
+    value_is_regex    boolean           NOT NULL,
+    description       text              NOT NULL,
+    UNIQUE (provenance_column, provenance_value)
+);
+
 CREATE TABLE users
 (
     id         uuid PRIMARY KEY,
@@ -37,4 +52,3 @@ SELECT relations.id AS id, prov_id, is_source, res, rel, when_timestamp AS prov_
 FROM relations
 INNER JOIN provenance
 ON provenance.id = relations.prov_id;
-

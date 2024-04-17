@@ -4,7 +4,7 @@ import org.jdbi.v3.core.Handle;
 
 import static org.knaw.huc.provenance.util.Config.JDBI;
 
-public class AuthService {
+class AuthService {
     private static final String USER_SQL = "SELECT id, email, who_person FROM users WHERE id = :id::uuid";
 
     public User getUserById(String id) {
