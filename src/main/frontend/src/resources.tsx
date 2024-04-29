@@ -14,7 +14,7 @@ export function ResourceLinks({curResource, sources, targets}: {
     useEffect(() => {
         setSourcesToShow(sources.slice(0, RESOURCES_SIZE));
         setTargetsToShow(targets.slice(0, RESOURCES_SIZE));
-    }, []);
+    }, [sources, targets]);
 
     function loadMore(resources: ProvenanceResource[], setter: Dispatch<SetStateAction<ProvenanceResource[]>>) {
         setter(res => res.concat(resources.slice(res.length, res.length + RESOURCES_SIZE)));

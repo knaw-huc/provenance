@@ -1,20 +1,25 @@
 import {useEffect, useState} from 'react';
-import {ProvHow, ProvInputOutput, ProvWhen, ProvWhere, ProvWho, ProvWhy,} from './columns.tsx';
+import {ProvHow, ProvInputOutput, ProvWhen, ProvWhere, ProvWho, ProvWhy} from './columns.tsx';
 import {ResourceLinks} from './resources.tsx';
 import './style.css';
 
 const PAGE_SIZE = 20;
+const PROVENANCE_SIZE = 10;
 
-export interface Provenance {
-    id: number;
+export interface CombinedProvenance {
     who: string;
     where: string;
-    when: string;
     howSoftware: string;
     howInit: string;
     howDelta: string;
     whyMotivation: string;
     whyProvenanceSchema: string;
+    provenance: Provenance[];
+}
+
+export interface Provenance {
+    id: number;
+    when: string;
     source: ProvenanceResource[];
     target: ProvenanceResource[];
 }
@@ -26,7 +31,7 @@ export interface ProvenanceResource {
 
 export default function ProvenanceForResource() {
     const [resource, setResource] = useState<string | null>(null);
-    const [provenance, setProvenance] = useState<Provenance[]>([]);
+    const [provenance, setProvenance] = useState<CombinedProvenance[]>([]);
     const [offset, setOffset] = useState(0);
 
     async function loadProvenanceOfResource() {
@@ -78,7 +83,8 @@ export default function ProvenanceForResource() {
                 </thead>
                 <tbody>
                 {provenance.map(prov =>
-                    <ProvRowWrapped provenance={prov} resource={resource!} key={prov.id}/>)}
+                    <ProvRowWrapped provenance={prov} resource={resource!}
+                                    key={prov.provenance.map(prov => prov.id).sort().join(':')}/>)}
                 </tbody>
             </table>
 
@@ -89,7 +95,7 @@ export default function ProvenanceForResource() {
     );
 }
 
-function ProvRowWrapped({provenance, resource}: { provenance: Provenance, resource: string }) {
+function ProvRowWrapped({provenance, resource}: { provenance: CombinedProvenance, resource: string }) {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -102,7 +108,7 @@ function ProvRowWrapped({provenance, resource}: { provenance: Provenance, resour
 }
 
 function ProvRow({provenance, resource, isOpen, toggle}: {
-    provenance: Provenance,
+    provenance: CombinedProvenance,
     resource: string,
     isOpen: boolean,
     toggle: () => void
@@ -120,12 +126,40 @@ function ProvRow({provenance, resource, isOpen, toggle}: {
     );
 }
 
-function ProvRowCollapsed({provenance, resource}: { provenance: Provenance, resource: string }) {
+function ProvRowCollapsed({provenance, resource}: { provenance: CombinedProvenance, resource: string }) {
+    const [recordsToShow, setRecordsToShow] = useState<Provenance[]>([]);
+
+    useEffect(() => {
+        setRecordsToShow(provenance.provenance.slice(0, PROVENANCE_SIZE));
+    }, [provenance]);
+
+    function loadMore() {
+        setRecordsToShow(res => res.concat(provenance.provenance.slice(res.length, res.length + PROVENANCE_SIZE)));
+    }
+
     return (
         <tr>
             <td colSpan={6}>
-                <ResourceLinks curResource={resource} sources={provenance.source} targets={provenance.target}/>
+                <div className="provenance">
+                    <ul>
+                        {recordsToShow.map(prov =>
+                            <CollapsedProv key={prov.id} provenance={prov} resource={resource}/>)}
+
+                        {provenance.provenance.length !== recordsToShow.length && <button onClick={loadMore}>
+                            Load more provenance records
+                        </button>}
+                    </ul>
+                </div>
             </td>
         </tr>
+    );
+}
+
+function CollapsedProv({provenance, resource}: { provenance: Provenance, resource: string }) {
+    return (
+        <li>
+            <p>ID: {provenance.id}</p>
+            <ResourceLinks curResource={resource} sources={provenance.source} targets={provenance.target}/>
+        </li>
     );
 }

@@ -1,16 +1,19 @@
 import dayjs from 'dayjs';
-import {Provenance} from './provenance.tsx';
+import {CombinedProvenance} from './provenance.tsx';
 import {useProvenanceTemplateFor} from './templates.tsx';
 
-export function ProvWhen({provenance}: { provenance: Provenance }) {
+export function ProvWhen({provenance}: { provenance: CombinedProvenance }) {
+    const firstDate = dayjs(provenance.provenance[provenance.provenance.length - 1].when).format('D MMM YYYY');
+    const lastDate = dayjs(provenance.provenance[0].when).format('D MMM YYYY');
+
     return (
         <>
-            {dayjs(provenance.when).format('D MMM YYYY')}
+            {firstDate === lastDate ? firstDate : `${firstDate} - ${lastDate}`}
         </>
     );
 }
 
-export function ProvHow({provenance}: { provenance: Provenance }) {
+export function ProvHow({provenance}: { provenance: CombinedProvenance }) {
     const template = useProvenanceTemplateFor('how_software', provenance.howSoftware);
 
     return (
@@ -34,7 +37,7 @@ export function ProvHow({provenance}: { provenance: Provenance }) {
     );
 }
 
-export function ProvWhy({provenance}: { provenance: Provenance }) {
+export function ProvWhy({provenance}: { provenance: CombinedProvenance }) {
     const template = useProvenanceTemplateFor('why_motivation', provenance.whyMotivation);
 
     return (
@@ -48,7 +51,7 @@ export function ProvWhy({provenance}: { provenance: Provenance }) {
     );
 }
 
-export function ProvWho({provenance}: { provenance: Provenance }) {
+export function ProvWho({provenance}: { provenance: CombinedProvenance }) {
     return (
         <>
             {provenance.who}
@@ -56,7 +59,7 @@ export function ProvWho({provenance}: { provenance: Provenance }) {
     );
 }
 
-export function ProvWhere({provenance}: { provenance: Provenance }) {
+export function ProvWhere({provenance}: { provenance: CombinedProvenance }) {
     const template = useProvenanceTemplateFor('where_location', provenance.where);
 
     return (
@@ -66,9 +69,11 @@ export function ProvWhere({provenance}: { provenance: Provenance }) {
     );
 }
 
-export function ProvInputOutput({provenance, resource}: { provenance: Provenance, resource: string }) {
-    const inSources = !!provenance.source.find(res => res.resource === resource);
-    const inTargets = !!provenance.target.find(res => res.resource === resource);
+export function ProvInputOutput({provenance, resource}: { provenance: CombinedProvenance, resource: string }) {
+    const inSources = !!provenance.provenance.find(prov =>
+        prov.source.find(res => res.resource === resource));
+    const inTargets = !!provenance.provenance.find(prov =>
+        prov.target.find(res => res.resource === resource));
 
     return (
         <>

@@ -16,7 +16,7 @@ interface TrailSql {
                -- 2022-01-03 | NULL        -- For this last NULL we need the UNION with the NULL
                SELECT lag(x, 1) OVER () AS from_time, x AS to_time
                FROM (
-                   -- Find all provenance records timestamps of which the given resource is both the source as the target
+                   -- Find all provenanceRecord records timestamps of which the given resource is both the source as the target
                    -- Then we know that at this point in time a new version of the resource was created
                    SELECT prov_timestamp
                    FROM prov_relations

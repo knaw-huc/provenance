@@ -6,6 +6,8 @@ import org.jdbi.v3.core.statement.PreparedBatch;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.groupingBy;
 import static org.knaw.huc.provenance.util.Config.JDBI;
 
 class ProvenanceService {
@@ -18,14 +20,19 @@ class ProvenanceService {
         }
     }
 
-    public List<Provenance> getProvenanceForResource(String resource, int limit, int offset) {
+    public List<CombinedProvenance> getProvenanceForResource(String resource, int limit, int offset) {
         try (Handle handle = JDBI.open()) {
             return handle.createQuery(ProvenanceSql.SELECT_BY_RESOURCE_SQL)
                     .bind("resource", resource)
                     .bind("limit", limit)
                     .bind("offset", offset)
                     .map(Provenance::mapFromResultSet)
-                    .collectIntoList();
+                    .stream()
+                    .collect(groupingBy(CombinedProvenance::provenanceHash))
+                    .values()
+                    .stream()
+                    .map(CombinedProvenance::mapFromRecords)
+                    .collect(toList());
         }
     }
 

@@ -53,7 +53,7 @@ public class ProvenanceApi {
         String resource = ctx.queryParam("resource");
         int limit = ctx.queryParamAsClass("limit", Integer.class).getOrDefault(10);
         int offset = ctx.queryParamAsClass("offset", Integer.class).getOrDefault(0);
-        List<Provenance> provenanceList = service.getProvenanceForResource(resource, limit, offset);
+        List<CombinedProvenance> provenanceList = service.getProvenanceForResource(resource, limit, offset);
         if (provenanceList.isEmpty())
             throw new BadRequestResponse("Invalid resource: " + resource);
 
