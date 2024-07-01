@@ -53,45 +53,45 @@
 
     <build>
         <plugins>
-            <!--            <plugin>-->
-            <!--                <groupId>com.github.eirslett</groupId>-->
-            <!--                <artifactId>frontend-maven-plugin</artifactId>-->
-            <!--                <version>1.15.0</version>-->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.15.0</version>
 
-            <!--                <configuration>-->
-            <!--                    <workingDirectory>src/main/frontend</workingDirectory>-->
-            <!--                </configuration>-->
+                <configuration>
+                    <workingDirectory>src/main/frontend</workingDirectory>
+                </configuration>
 
-            <!--                <executions>-->
-            <!--                    <execution>-->
-            <!--                        <id>install node and npm</id>-->
-            <!--                        <goals>-->
-            <!--                            <goal>install-node-and-npm</goal>-->
-            <!--                        </goals>-->
-            <!--                        <configuration>-->
-            <!--                            <nodeVersion>v20.12.2</nodeVersion>-->
-            <!--                        </configuration>-->
-            <!--                    </execution>-->
+                <executions>
+                    <execution>
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <configuration>
+                            <nodeVersion>v20.15.0</nodeVersion>
+                        </configuration>
+                    </execution>
 
-            <!--                    <execution>-->
-            <!--                        <id>npm install</id>-->
-            <!--                        <goals>-->
-            <!--                            <goal>npm</goal>-->
-            <!--                        </goals>-->
-            <!--                    </execution>-->
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                    </execution>
 
-            <!--                    <execution>-->
-            <!--                        <id>npm run build</id>-->
-            <!--                        <goals>-->
-            <!--                            <goal>npm</goal>-->
-            <!--                        </goals>-->
+                    <execution>
+                        <id>npm run build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
 
-            <!--                        <configuration>-->
-            <!--                            <arguments>run build</arguments>-->
-            <!--                        </configuration>-->
-            <!--                    </execution>-->
-            <!--                </executions>-->
-            <!--            </plugin>-->
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
