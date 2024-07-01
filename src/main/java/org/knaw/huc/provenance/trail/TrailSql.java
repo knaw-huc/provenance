@@ -47,8 +47,12 @@ interface TrailSql {
             FROM relations
             WHERE prov_id = :provenanceId""";
 
-    String TRAIL_BACKWARD_SQL = """
+    String RECURSIVE_BACKWARD_SQL = """
             WITH RECURSIVE backward(id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel) AS (
+                -- The initial step: start with the given ids and go backwards
+                -- res 'is_source' == false --> provenance --> res 'is_source' == true
+                -- LATERAL acting as a for-each loop: for each given resource (where 'is_source' == false)
+                -- look up the resources from the same provenance record where 'is_source' == true
                 SELECT source.id, source.prov_id, source.prov_timestamp, source.res, source.rel, target.res, target.rel
                 FROM prov_relations AS target, LATERAL (
                     SELECT *
@@ -56,9 +60,14 @@ interface TrailSql {
                     WHERE prov_id = target.prov_id AND is_source = true
                 ) AS source
                 WHERE target.id IN (<ids>) AND target.is_source = false
-
+            
+                -- For every recursive step join the results using an union
                 UNION ALL
 
+                -- The recursion step: the results so far are in a temporary table 'backward'
+                -- Continue going backwards in the same way
+                -- Prevent cycles by using the 'id' column to track a 'path', if the 'id' is already in the 'path',
+                -- the `is_cycle` column boolean is set to true
                 SELECT source.id, source.prov_id, source.prov_timestamp, source.res, source.rel, target.res, target.rel
                 FROM prov_relations AS target, LATERAL (
                     SELECT *
@@ -66,21 +75,9 @@ interface TrailSql {
                     WHERE prov_id = target.prov_id AND is_source = true
                 ) AS source, backward
                 WHERE target.res = backward.source_res AND target.is_source = false
-            ) CYCLE id SET is_cycle USING path
+            ) CYCLE id SET is_cycle USING path""";
 
-            SELECT id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
-            FROM (
-                SELECT a.*, row_number() OVER () AS sort
-                FROM backward AS a
-                LEFT JOIN backward AS b
-                ON a.id = b.id AND a.path != b.path AND cardinality(a.path) < cardinality(b.path)
-                AND NOT (a.path <@ b.path AND a.path @> b.path) AND NOT b.is_cycle
-                WHERE b.id IS NULL AND NOT a.is_cycle
-            ) AS x
-            GROUP BY id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
-            ORDER BY MAX(sort)""";
-
-    String TRAIL_FORWARD_SQL = """
+    String RECURSIVE_FORWARD_SQL = """
             WITH RECURSIVE forward(id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel) AS (
                 SELECT source.id, source.prov_id, source.prov_timestamp, source.res, source.rel, target.res, target.rel
                 FROM prov_relations AS source, LATERAL (
@@ -99,17 +96,38 @@ interface TrailSql {
                     WHERE prov_id = source.prov_id AND is_source = false
                 ) AS target, forward
                 WHERE source.res = forward.target_res AND source.is_source = true
-            ) CYCLE id SET is_cycle USING path
+            ) CYCLE id SET is_cycle USING path""";
 
-            SELECT id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
+    String RECURSIVE_SQL = """
+            -- Join the results from the recursion with the provenance data
+            -- Also combine similar provenance records together using a id created by a 'dense_rank' window function
+            SELECT trail.id, prov_id, prov_timestamp, who_person, where_location, when_time, when_timestamp,
+                   how_software, how_init, how_delta, why_motivation, why_provenance_schema,
+                   source_res, source_rel, target_res, target_rel,
+                   dense_rank() OVER (ORDER BY who_person, where_location, how_software, how_init, how_delta,
+                                               why_motivation, why_provenance_schema) AS combined_prov_id
             FROM (
-                SELECT a.*, row_number() OVER () AS sort
-                FROM forward AS a
-                LEFT JOIN forward AS b
-                ON a.id = b.id AND a.path != b.path AND cardinality(a.path) < cardinality(b.path)
-                AND NOT (a.path <@ b.path AND a.path @> b.path) AND NOT b.is_cycle
-                WHERE b.id IS NULL AND NOT a.is_cycle
-            ) AS x
-            GROUP BY id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
-            ORDER BY MAX(sort)""";
+                -- Filter out duplicates using a group by
+                -- Restore the original order using the 'sort' column
+                SELECT id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
+                FROM (
+                    -- Run the recursion query, but we still have to filter the results
+                    -- We use the 'path' to find other paths that lead to the same resource
+                    -- Do this by joining the results by checking if the resource is the same, but the paths differ
+                    -- We only want to keep those where the path is the longest
+                    -- Furthermore, we are not interested in other paths that contain the same path (a 'detour')
+                    -- And we have to remove the cycles we detected
+                    -- Keep track of a row number 'sort' so we can keep this order later on
+                    SELECT a.*, row_number() OVER () AS sort
+                    FROM :recursive AS a
+                    LEFT JOIN :recursive AS b
+                    ON a.id = b.id AND a.path != b.path AND cardinality(a.path) < cardinality(b.path)
+                    AND NOT (a.path <@ b.path AND a.path @> b.path) AND NOT b.is_cycle
+                    WHERE b.id IS NULL AND NOT a.is_cycle
+                ) AS x
+                GROUP BY id, prov_id, prov_timestamp, source_res, source_rel, target_res, target_rel
+                ORDER BY MAX(sort)
+            ) AS trail
+            LEFT JOIN provenance AS prov
+            ON prov.id = trail.prov_id""";
 }

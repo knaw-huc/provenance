@@ -180,8 +180,8 @@ function createTree(trail) {
             .attr('stroke-width', 2)
             .filter(d => d.depth !== 0)
             .style('cursor', 'pointer')
-            .on('mouseover', (e, d) => document.getElementById('resource-info').innerText = d.data.resource)
-            .on('mouseout', _ => document.getElementById('resource-info').innerText = '')
+            .on('mouseover', (e, d) => document.getElementsByClassName('resource-info')[0].innerText = d.data.resource)
+            .on('mouseout', _ => document.getElementsByClassName('resource-info')[0].innerText = '')
             .on('click', (e, d) => {
                 const dates = [];
                 if (d.parent)
@@ -196,7 +196,7 @@ function createTree(trail) {
 
         resourceNode
             .filter(d => d.depth === 0)
-            .attr('id', 'selected');
+            .attr('class', 'selected');
 
         const provenanceNode = main.append('g')
             .selectAll('g')
@@ -211,25 +211,25 @@ function createTree(trail) {
             .attr('stroke', color)
             .attr('stroke-width', 2)
             .attr('transform', 'translate(0, -10) rotate(45)')
-            .filter(d => d.depth !== 0)
-            .style('cursor', 'pointer')
-            .on('click', (e, d) => {
-                window.location.hash = `${d.data.id}`;
-                e.preventDefault();
-            });
+            .filter(d => d.depth !== 0);
+            // .style('cursor', 'pointer')
+            // .on('click', (e, d) => {
+            //     window.location.hash = `${d.data.combinedId}`;
+            //     e.preventDefault();
+            // });
 
         provenanceNode
             .filter(d => d.depth === 0)
-            .attr('id', 'selected');
+            .attr('class', 'selected');
 
-        provenanceNode.append('text')
-            .attr('y', -5)
-            .attr('x', d => !d.children && !isLeft ? -13 : 13)
-            .attr('fill', color)
-            .attr('text-anchor', d => !d.children && !isLeft ? 'end' : 'start')
-            .text(d => `#${d.data.id}`);
+        // provenanceNode.append('text')
+        //     .attr('y', -5)
+        //     .attr('x', d => !d.children && !isLeft ? -13 : 13)
+        //     .attr('fill', color)
+        //     .attr('text-anchor', d => !d.children && !isLeft ? 'end' : 'start')
+        //     .text(d => `#${d.data.combinedId}`);
 
-        document.getElementById('selected').scrollIntoView({
+        document.getElementsByClassName('selected')[0].scrollIntoView({
             behavior: 'smooth',
             block: 'nearest',
             inline: 'center'
@@ -238,7 +238,7 @@ function createTree(trail) {
 }
 
 async function writeMetadata(trail) {
-    const root = document.getElementById('metadata');
+    const root = document.getElementsByClassName('metadata')[0];
     while (root.firstChild)
         root.removeChild(root.lastChild);
 
@@ -251,11 +251,11 @@ async function writeMetadata(trail) {
 
         if (trail.sourceRoot.relations.length > 0)
             writeData(links, 'Is the result of events with provenance identifier',
-                trail.sourceRoot.relations.map(source => createProvenanceElem(root, source)));
+                trail.sourceRoot.relations.flatMap(source => Object.keys(source.records).map(rec => createProvenanceElem(root, rec))));
 
         if (trail.targetRoot.relations.length > 0)
             writeData(links, 'Is used as input for events with provenance identifier',
-                trail.targetRoot.relations.map(target => createProvenanceElem(root, target)));
+                trail.targetRoot.relations.flatMap(target => Object.keys(target.records).map(rec => createProvenanceElem(root, rec))));
     }
     else {
         header.innerText = 'Event with provenance id #' + trail.sourceRoot.id;
@@ -302,10 +302,10 @@ async function writeMetadata(trail) {
     }
 }
 
-function createProvenanceElem(root, data) {
+function createProvenanceElem(root, id) {
     const resourceLink = document.createElement('a');
-    resourceLink.innerText = '#' + data.id;
-    resourceLink.setAttribute('href', `#${data.id}`);
+    resourceLink.innerText = '#' + id;
+    resourceLink.setAttribute('href', `#${id}`);
 
     const resourceElem = document.createElement('dd');
     resourceElem.append(resourceLink);

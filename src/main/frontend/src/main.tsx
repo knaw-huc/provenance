@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import OldProvenance from './old/provenance.tsx';
-import ProvenanceForResource from './provenance.tsx';
 import {ProvenanceTemplatesProvider} from './templates.tsx';
+import ProvenanceTrail from './root.tsx';
 
 ReactDOM.createRoot(document.getElementById('app')!).render(
     <React.StrictMode>
@@ -18,7 +18,7 @@ function SimpleRouter() {
 
     return (
         <ProvenanceTemplatesProvider>
-            <ProvenanceForResource/>
+            <ProvenanceTrail/>
         </ProvenanceTemplatesProvider>
     );
 }

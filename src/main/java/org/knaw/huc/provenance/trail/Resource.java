@@ -4,13 +4,13 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-public record Resource(String resource, Integer provIdUpdate, Set<Relation<Provenance>> relations)
+public record Resource(String resource, Long provIdUpdate, Set<Relation<Provenance>> relations)
         implements TrailNode<Provenance> {
     public static Resource create(String resource) {
         return new Resource(resource, null, new HashSet<>());
     }
 
-    public Resource createNewVersion(int provIdUpdate) {
+    public Resource createNewVersion(long provIdUpdate) {
         return new Resource(resource, provIdUpdate, new HashSet<>());
     }
 

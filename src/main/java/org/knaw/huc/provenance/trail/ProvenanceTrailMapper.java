@@ -16,6 +16,7 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
 
     private final Resource resourceRoot;
     private Provenance provenanceRoot;
+    private final long provenanceRootId;
     private final Direction direction;
 
     private final Map<Integer, Provenance> provenances;
@@ -26,6 +27,7 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
     public ProvenanceTrailMapper(String resource, Direction dir) {
         resourceRoot = Resource.create(resource);
         provenanceRoot = null;
+        provenanceRootId = 0L;
 
         direction = dir;
         provenances = new HashMap<>();
@@ -35,8 +37,9 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
         resources.put(resource, resourceRoot);
     }
 
-    public ProvenanceTrailMapper(int provenanceId, Direction dir) {
-        provenanceRoot = Provenance.create(provenanceId, null);
+    public ProvenanceTrailMapper(long provenanceRootId, Direction dir) {
+        this.provenanceRootId = provenanceRootId;
+        provenanceRoot = null;
         resourceRoot = null;
 
         direction = dir;
@@ -69,14 +72,16 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
 
         visited.add(id);
 
-        int provId = rs.getInt("prov_id");
+        long provId = rs.getInt("prov_id");
+        int combinedProvId = rs.getInt("combined_prov_id");
         LocalDateTime timestamp = rs.getObject("prov_timestamp", LocalDateTime.class);
 
-        Provenance provenance = getProvenance(provId, timestamp);
+        ProvenanceData data = ProvenanceData.mapFromResultSet(rs, ctx);
+        Provenance provenance = getProvenance(combinedProvId, provId, timestamp, data);
         Resource source = getResource(rs.getString("source_res"), provId);
         Resource target = getResource(rs.getString("target_res"), provId);
 
-        if (provenanceRoot != null && provenanceRoot.id() == provId && provenanceRoot.date() == null)
+        if (provenanceRoot == null && provenanceRootId == provId)
             provenanceRoot = provenance;
 
         if (source.equals(target)) {
@@ -101,14 +106,17 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
         return null;
     }
 
-    private Provenance getProvenance(int provId, LocalDateTime timestamp) {
-        Provenance provenance = provenances.getOrDefault(provId, Provenance.create(provId, timestamp));
-        if (!provenances.containsKey(provId))
-            provenances.put(provId, provenance);
+    private Provenance getProvenance(int combinedProvId, long provId, LocalDateTime timestamp, ProvenanceData data) {
+        Provenance provenance = provenances.getOrDefault(combinedProvId, Provenance.create(combinedProvId, data));
+        provenance.records().put(provId, timestamp);
+
+        if (!provenances.containsKey(combinedProvId))
+            provenances.put(combinedProvId, provenance);
+
         return provenance;
     }
 
-    private Resource getResource(String res, int provId) {
+    private Resource getResource(String res, long provId) {
         if (resources.containsKey(res + "_" + provId))
             return resources.get(res + "_" + provId);
 
@@ -119,7 +127,7 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
         return resource;
     }
 
-    private Resource createNewResourceVersion(Resource resource, int provId) {
+    private Resource createNewResourceVersion(Resource resource, long provId) {
         Resource newResource = resource.createNewVersion(provId);
         resources.put(newResource.resource(), newResource);
         resources.put(resource.resource() + "_" + provId, resource);

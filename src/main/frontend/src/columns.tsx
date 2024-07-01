@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
-import {CombinedProvenance} from './provenance.tsx';
+import {Provenance} from './interfaces.ts';
 import {useProvenanceTemplateFor} from './templates.tsx';
 
-export function ProvWhen({provenance}: { provenance: CombinedProvenance }) {
-    const firstDate = dayjs(provenance.provenance[provenance.provenance.length - 1].when).format('D MMM YYYY');
-    const lastDate = dayjs(provenance.provenance[0].when).format('D MMM YYYY');
+export function ProvWhen({provenance}: { provenance: Provenance }) {
+    const dates = Object.values(provenance.records).sort();
+    const firstDate = dayjs(dates[0]).format('D MMM YYYY');
+    const lastDate = dayjs(dates[dates.length - 1]).format('D MMM YYYY');
 
     return (
         <>
@@ -13,71 +14,58 @@ export function ProvWhen({provenance}: { provenance: CombinedProvenance }) {
     );
 }
 
-export function ProvHow({provenance}: { provenance: CombinedProvenance }) {
-    const template = useProvenanceTemplateFor('how_software', provenance.howSoftware);
+export function ProvHow({provenance}: { provenance: Provenance }) {
+    const template = useProvenanceTemplateFor('how_software', provenance.data.howSoftware);
 
     return (
         <>
             {template && template.description}
 
-            {provenance.howSoftware && <pre>
+            {provenance.data.howSoftware && <pre>
                 <div>
-                    <strong>Script:</strong> {provenance.howSoftware}
+                    <strong>Script:</strong> {provenance.data.howSoftware}
                 </div>
 
-                {provenance.howInit && <div>
-                    <strong>Initialized with:</strong> {provenance.howInit}
+                {provenance.data.howInit && <div>
+                    <strong>Initialized with:</strong> {provenance.data.howInit}
                 </div>}
             </pre>}
 
-            {provenance.howDelta && <pre>
-                {provenance.howDelta}
+            {provenance.data.howDelta && <pre>
+                {provenance.data.howDelta}
             </pre>}
         </>
     );
 }
 
-export function ProvWhy({provenance}: { provenance: CombinedProvenance }) {
-    const template = useProvenanceTemplateFor('why_motivation', provenance.whyMotivation);
+export function ProvWhy({provenance}: { provenance: Provenance }) {
+    const template = useProvenanceTemplateFor('why_motivation', provenance.data.whyMotivation);
 
     return (
         <>
-            {template ? template.description : provenance.whyMotivation}
+            {template ? template.description : provenance.data.whyMotivation}
 
-            {provenance.whyProvenanceSchema && <pre>
-                {provenance.whyProvenanceSchema}
+            {provenance.data.whyProvenanceSchema && <pre>
+                {provenance.data.whyProvenanceSchema}
             </pre>}
         </>
     );
 }
 
-export function ProvWho({provenance}: { provenance: CombinedProvenance }) {
+export function ProvWho({provenance}: { provenance: Provenance }) {
     return (
         <>
-            {provenance.who}
+            {provenance.data.who}
         </>
     );
 }
 
-export function ProvWhere({provenance}: { provenance: CombinedProvenance }) {
-    const template = useProvenanceTemplateFor('where_location', provenance.where);
+export function ProvWhere({provenance}: { provenance: Provenance }) {
+    const template = useProvenanceTemplateFor('where_location', provenance.data.where);
 
     return (
         <>
-            {template ? template.description : provenance.where}
-        </>
-    );
-}
-
-export function ProvInputOutput({provenance, resource}: { provenance: CombinedProvenance, resource: string }) {
-    const inSources = !!provenance.provenance.find(prov =>
-        prov.source.find(res => res.resource === resource));
-    const inTargets = !!provenance.provenance.find(prov =>
-        prov.target.find(res => res.resource === resource));
-
-    return (
-        <>
-            {inSources && inTargets ? 'input and output' : (inSources ? 'input' : 'output')}
+            {template ? template.description : provenance.data.where}
         </>
     );
 }

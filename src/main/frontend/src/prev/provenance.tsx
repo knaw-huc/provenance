@@ -158,7 +158,6 @@ function ProvRowCollapsed({provenance, resource}: { provenance: CombinedProvenan
 function CollapsedProv({provenance, resource}: { provenance: Provenance, resource: string }) {
     return (
         <li>
-            <p>ID: {provenance.id}</p>
             <ResourceLinks curResource={resource} sources={provenance.source} targets={provenance.target}/>
         </li>
     );

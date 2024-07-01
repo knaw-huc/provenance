@@ -38,7 +38,7 @@ class TrailService {
         }
     }
 
-    public ProvenanceTrail<Provenance, Resource> getTrailForProvenance(int provId) {
+    public ProvenanceTrail<Provenance, Resource> getTrailForProvenance(long provId) {
         try (Handle handle = JDBI.open()) {
             Pair<List<Integer>> startIds = getStartIds(handle, provId);
 
@@ -50,7 +50,7 @@ class TrailService {
         }
     }
 
-    public Provenance getTrailForProvenance(int provId, Direction direction) {
+    public Provenance getTrailForProvenance(long provId, Direction direction) {
         try (Handle handle = JDBI.open()) {
             Pair<List<Integer>> startIds = getStartIds(handle, provId);
             List<Integer> startIdsForDirection = direction == BACKWARDS ? startIds.first() : startIds.second();
@@ -87,7 +87,7 @@ class TrailService {
                 });
     }
 
-    private Pair<List<Integer>> getStartIds(Handle handle, int provId) {
+    private Pair<List<Integer>> getStartIds(Handle handle, long provId) {
         return handle
                 .createQuery(TrailSql.SELECT_PROVENANCE_RELATIONS_IDS_SQL)
                 .bind("provenanceId", provId)
@@ -111,7 +111,11 @@ class TrailService {
     }
 
     private void map(Handle handle, List<Integer> startIds, ProvenanceTrailMapper mapper, Direction direction) {
-        handle.createQuery(direction == FORWARDS ? TrailSql.TRAIL_FORWARD_SQL : TrailSql.TRAIL_BACKWARD_SQL)
+        String recursiveQuery = direction == FORWARDS ? TrailSql.RECURSIVE_FORWARD_SQL : TrailSql.RECURSIVE_BACKWARD_SQL;
+        String query = (recursiveQuery + "\n\n" + TrailSql.RECURSIVE_SQL)
+                .replaceAll(":recursive", direction == FORWARDS ? "forward" : "backward");
+
+        handle.createQuery(query)
                 .bindList("ids", startIds)
                 .map(mapper)
                 .list();

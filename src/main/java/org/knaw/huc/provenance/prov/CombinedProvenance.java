@@ -21,7 +21,7 @@ public record CombinedProvenance(String who, String where,
                 new ArrayList<>(List.of(new ProvenanceRecord(record.id(), record.when(), record.source(), record.target()))));
     }
 
-    public void addToProvenance(Provenance record) {
+    private void addToProvenance(Provenance record) {
         provenance.add(new ProvenanceRecord(record.id(), record.when(), record.source(), record.target()));
     }
 
