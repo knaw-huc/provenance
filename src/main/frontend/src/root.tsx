@@ -32,11 +32,13 @@ export default function ProvenanceTrail() {
 
     return (
         <div className="container">
-            <h1>{resource}</h1>
+            <div className="trail">
+                <div className="trail-container">
+                    <h1>{resource}</h1>
+                </div>
 
-            {trail && <div className="trail">
-                <ResourceProvenanceEvents resource={trail}/>
-            </div>}
+                {trail && <ResourceProvenanceEvents resource={trail}/>}
+            </div>
         </div>
     );
 }
@@ -44,14 +46,16 @@ export default function ProvenanceTrail() {
 function ResourceProvenanceEvents({resource}: { resource: Resource }) {
     const [selectedProv, setSelectedProv] = useState<Provenance | null>(null);
 
-    useEffect(() => setSelectedProv(resource.relations.length === 1 ? resource.relations[0] : null), [resource]);
+    useEffect(() => setSelectedProv(resource.relations[0]), [resource]);
 
     return (
         <>
-            <div className="cards">
-                {resource.relations.map(prov =>
-                    <ProvenanceCard key={prov.combinedId} provenance={prov} isSelected={prov === selectedProv}
-                                    onClick={() => setSelectedProv(prov)}/>)}
+            <div className="trail-container">
+                <div className="cards">
+                    {resource.relations.map(prov =>
+                        <ProvenanceCard key={prov.combinedId} provenance={prov} isSelected={prov === selectedProv}
+                                        onClick={() => setSelectedProv(prov)}/>)}
+                </div>
             </div>
 
             {selectedProv && <ProvenanceResourceSources provenance={selectedProv}/>}
@@ -90,19 +94,27 @@ function ProvenanceResourceSources({provenance}: { provenance: Provenance }) {
     const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
     const sortFunc = (a: Resource, b: Resource) => a.resource.localeCompare(b.resource);
 
-    useEffect(() => setSelectedResource(provenance.relations.length === 1 ? provenance.relations[0] : null), [provenance]);
+    useEffect(() => setSelectedResource(provenance.relations[0]), [provenance]);
 
     return (
         <>
-            <ul className="resources card">
-                {provenance.relations.sort(sortFunc).map(resource =>
-                    <li key={resource.resource} className={resource === selectedResource ? 'selected' : ''}
-                        onClick={() => setSelectedResource(resource)}>
-                        {resource.resource}
-                    </li>)}
-            </ul>
+            <div className="trail-container">
+                <ul className="resources card">
+                    {provenance.relations.sort(sortFunc).map(resource =>
+                        <li key={resource.resource} className={resource === selectedResource ? 'selected' : ''}>
+                            <span onClick={() => setSelectedResource(resource)}>
+                                {resource.resource}
+                            </span>
 
-            {selectedResource && <ResourceProvenanceEvents resource={selectedResource}/>}
+                            <a href={resource.resource} target="_blank">
+                                Go to resource
+                            </a>
+                        </li>)}
+                </ul>
+            </div>
+
+            {selectedResource && selectedResource.relations.length > 0 &&
+                <ResourceProvenanceEvents resource={selectedResource}/>}
         </>
     );
 }

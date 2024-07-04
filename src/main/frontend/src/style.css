@@ -7,7 +7,6 @@ h1 {
     color: #4682b4;
     font-size: 1.2em;
     font-weight: bold;
-    text-align: center;
 }
 
 dl {
@@ -42,11 +41,56 @@ pre {
     margin: auto;
 }
 
+a[target="_blank"]::after {
+    content: "";
+    width: 1em;
+    height: 1em;
+    margin: 0 0.05em 0 0.1em;
+    background: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij48cGF0aCBkPSJNOSAyTDkgMyAxMi4zIDMgNiA5LjMgNi43IDEwIDEzIDMuNyAxMyA3IDE0IDcgMTQgMlpNNCA0QzIuOSA0IDIgNC45IDIgNkwyIDEyQzIgMTMuMSAyLjkgMTQgNCAxNEwxMCAxNEMxMS4xIDE0IDEyIDEzLjEgMTIgMTJMMTIgNyAxMSA4IDExIDEyQzExIDEyLjYgMTAuNiAxMyAxMCAxM0w0IDEzQzMuNCAxMyAzIDEyLjYgMyAxMkwzIDZDMyA1LjQgMy40IDUgNCA1TDggNSA5IDRaIi8+PC9zdmc+) no-repeat;
+    background-size: contain;
+    display: inline-block;
+    vertical-align: text-bottom;
+}
+
 .trail {
     display: flex;
     margin-top: 2rem;
+    margin-left: 4rem;
     flex-direction: column;
     gap: 2rem;
+}
+
+.trail-container {
+    position: relative;
+
+    h1 {
+        margin: 0 0 1.3rem;
+    }
+
+    &:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        bottom: -4rem;
+        left: -3rem;
+        width: 4rem;
+        height: 6rem;
+        background: transparent;
+        border-left: 2px solid #4682b4;
+        border-radius: 6rem;
+    }
+
+    &:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        bottom: 1.3rem;
+        left: -2.1rem;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 0.9rem 0.9rem 0;
+        border-color: transparent #4682b4 transparent transparent;
+        transform: rotate(20deg);
+    }
 }
 
 .cards {
@@ -56,12 +100,15 @@ pre {
     overflow: auto;
     margin: -15px;
     padding: 15px;
+
+    .card {
+        cursor: pointer;
+    }
 }
 
 .card {
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
     padding: 0.8rem;
-    cursor: pointer;
 
     &.selected {
         background-color: #edf3f8;
@@ -75,5 +122,10 @@ pre {
     .selected {
         color: #4682b4;
         font-weight: bold;
+    }
+
+    span {
+        cursor: pointer;
+        margin-right: 1rem;
     }
 }
