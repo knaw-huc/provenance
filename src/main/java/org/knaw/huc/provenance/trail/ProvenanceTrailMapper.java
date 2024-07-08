@@ -7,9 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 class ProvenanceTrailMapper implements RowMapper<Void> {
     public enum Direction {BACKWARDS, FORWARDS}
@@ -22,8 +20,6 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
     private final Map<Integer, Provenance> provenances;
     private final Map<String, Resource> resources;
 
-    private final Set<Integer> visited;
-
     public ProvenanceTrailMapper(String resource, Direction dir) {
         resourceRoot = Resource.create(resource);
         provenanceRoot = null;
@@ -32,7 +28,6 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
         direction = dir;
         provenances = new HashMap<>();
         resources = new HashMap<>();
-        visited = new HashSet<>();
 
         resources.put(resource, resourceRoot);
     }
@@ -45,7 +40,6 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
         direction = dir;
         provenances = new HashMap<>();
         resources = new HashMap<>();
-        visited = new HashSet<>();
     }
 
     public Resource getResourceRoot() {
@@ -56,21 +50,9 @@ class ProvenanceTrailMapper implements RowMapper<Void> {
         return provenanceRoot;
     }
 
-    public void setVisited(Set<Integer> visited) {
-        this.visited.addAll(visited);
-    }
-
-    public Set<Integer> getVisited() {
-        return visited;
-    }
-
     @Override
     public Void map(ResultSet rs, StatementContext ctx) throws SQLException {
         int id = rs.getInt("id");
-        if (visited.contains(id))
-            return null;
-
-        visited.add(id);
 
         long provId = rs.getInt("prov_id");
         int combinedProvId = rs.getInt("combined_prov_id");

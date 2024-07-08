@@ -14,18 +14,6 @@ import static org.knaw.huc.provenance.trail.ProvenanceTrailMapper.Direction.FORW
 import static org.knaw.huc.provenance.util.Config.JDBI;
 
 class TrailService {
-    public ProvenanceTrail<Resource, Provenance> getTrailForResource(String resource, LocalDateTime at) {
-        try (Handle handle = JDBI.open()) {
-            Pair<List<Integer>> startIds = getStartIds(handle, resource, at);
-
-            ProvenanceTrailMapper backwardsMapper = new ProvenanceTrailMapper(resource, BACKWARDS);
-            ProvenanceTrailMapper forwardsMapper = new ProvenanceTrailMapper(resource, FORWARDS);
-            mapBackwardAndForward(handle, startIds, false, backwardsMapper, forwardsMapper);
-
-            return new ProvenanceTrail<>(backwardsMapper.getResourceRoot(), forwardsMapper.getResourceRoot());
-        }
-    }
-
     public Resource getTrailForResource(String resource, LocalDateTime at, Direction direction) {
         try (Handle handle = JDBI.open()) {
             Pair<List<Integer>> startIds = getStartIds(handle, resource, at);
@@ -35,18 +23,6 @@ class TrailService {
             map(handle, startIdsForDirection, mapper, direction);
 
             return mapper.getResourceRoot();
-        }
-    }
-
-    public ProvenanceTrail<Provenance, Resource> getTrailForProvenance(long provId) {
-        try (Handle handle = JDBI.open()) {
-            Pair<List<Integer>> startIds = getStartIds(handle, provId);
-
-            ProvenanceTrailMapper backwardsMapper = new ProvenanceTrailMapper(provId, BACKWARDS);
-            ProvenanceTrailMapper forwardsMapper = new ProvenanceTrailMapper(provId, FORWARDS);
-            mapBackwardAndForward(handle, startIds, true, backwardsMapper, forwardsMapper);
-
-            return new ProvenanceTrail<>(backwardsMapper.getProvenanceRoot(), forwardsMapper.getProvenanceRoot());
         }
     }
 
@@ -98,16 +74,6 @@ class TrailService {
                         prev.second().add(rs.getInt("id"));
                     return prev;
                 });
-    }
-
-    private void mapBackwardAndForward(Handle handle, Pair<List<Integer>> startIds, boolean isProvenance,
-                                       ProvenanceTrailMapper backwardsMapper, ProvenanceTrailMapper forwardsMapper) {
-        if (!startIds.first().isEmpty())
-            map(handle, startIds.first(), backwardsMapper, BACKWARDS);
-        if (!isProvenance)
-            forwardsMapper.setVisited(backwardsMapper.getVisited());
-        if (!startIds.second().isEmpty())
-            map(handle, startIds.second(), forwardsMapper, FORWARDS);
     }
 
     private void map(Handle handle, List<Integer> startIds, ProvenanceTrailMapper mapper, Direction direction) {

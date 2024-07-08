@@ -19,7 +19,7 @@ public class TrailApi {
         if (!provenance.hasValue() && (resource == null || resource.isEmpty()))
             throw new BadRequestResponse("No provenance or resource given");
 
-        ProvenanceTrailMapper.Direction direction = null;
+        ProvenanceTrailMapper.Direction direction = ProvenanceTrailMapper.Direction.BACKWARDS;
         try {
             String directionParam = ctx.queryParam("direction");
             if (directionParam != null) {
@@ -35,18 +35,10 @@ public class TrailApi {
     }
 
     private void withProvenance(Context ctx, long provenance, ProvenanceTrailMapper.Direction direction) {
-        if (direction == null) {
-            ProvenanceTrail<Provenance, Resource> provenanceTrail =
-                    service.getTrailForProvenance(provenance);
-            if (provenanceTrail == null)
-                throw new BadRequestResponse("Invalid provenance id: " + provenance);
-            ctx.json(provenanceTrail);
-        } else {
-            Provenance ProvenanceTrail = service.getTrailForProvenance(provenance, direction);
-            if (ProvenanceTrail == null)
-                throw new BadRequestResponse("Invalid provenance id: " + provenance);
-            ctx.json(ProvenanceTrail);
-        }
+        Provenance ProvenanceTrail = service.getTrailForProvenance(provenance, direction);
+        if (ProvenanceTrail == null)
+            throw new BadRequestResponse("Invalid provenance id: " + provenance);
+        ctx.json(ProvenanceTrail);
     }
 
     private void withResource(Context ctx, String resource, ProvenanceTrailMapper.Direction direction) {
@@ -56,18 +48,10 @@ public class TrailApi {
             if (atFormatted != null)
                 at = parseIsoDate(atFormatted);
 
-            if (direction == null) {
-                ProvenanceTrail<Resource, Provenance> provenanceTrail =
-                        service.getTrailForResource(resource.trim(), at);
-                if (provenanceTrail == null)
-                    throw new BadRequestResponse("Invalid resource: " + resource.trim());
-                ctx.json(provenanceTrail);
-            } else {
-                Resource provenanceTrail = service.getTrailForResource(resource.trim(), at, direction);
-                if (provenanceTrail == null)
-                    throw new BadRequestResponse("Invalid resource: " + resource.trim());
-                ctx.json(provenanceTrail);
-            }
+            Resource provenanceTrail = service.getTrailForResource(resource.trim(), at, direction);
+            if (provenanceTrail == null)
+                throw new BadRequestResponse("Invalid resource: " + resource.trim());
+            ctx.json(provenanceTrail);
         } catch (DateTimeParseException ex) {
             throw new BadRequestResponse("Incorrect date/time given; use the ISO-8601 format");
         }

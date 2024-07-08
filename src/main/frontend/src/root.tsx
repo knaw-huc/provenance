@@ -1,29 +1,48 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Provenance, Resource} from './interfaces.ts';
 import {ProvHow, ProvWhen, ProvWhere, ProvWho, ProvWhy} from './columns.tsx';
+import createGraph from './graph.ts';
 import './style.css';
 
 export default function ProvenanceTrail() {
     const [resource, setResource] = useState<string | null>(null);
     const [trail, setTrail] = useState<Resource | null>(null);
 
-    async function loadProvenanceTrail() {
+    function onHashChange() {
         const resource = window.location.hash.substring(1);
+        if (resource.length > 0) {
+            const params = new URLSearchParams();
+            params.append('resource', resource);
+            window.location.search = params.toString();
+        }
+    }
+
+    async function loadProvenanceTrail() {
+        window.location.hash = '';
+
+        const requestParams = new URLSearchParams(window.location.search);
+        const resource = requestParams.get('resource');
         setResource(resource);
 
-        const params = new URLSearchParams();
-        params.append('resource', resource);
-        params.append('direction', 'backwards');
+        if (resource) {
+            const params = new URLSearchParams();
+            params.append('resource', resource);
+            params.append('direction', 'backwards');
 
-        const result = await fetch(`/trail?${params.toString()}`);
-        if (result.ok)
-            setTrail(await result.json());
+            const result = await fetch(`/trail?${params.toString()}`);
+            if (result.ok)
+                setTrail(await result.json());
+        }
+        else {
+            setTrail(null);
+        }
     }
 
     useEffect(() => {
+        onHashChange();
         loadProvenanceTrail();
-        window.addEventListener('hashchange', loadProvenanceTrail);
-        return () => window.removeEventListener('hashchange', loadProvenanceTrail);
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
     }, []);
 
     if (resource === null) {
@@ -32,13 +51,32 @@ export default function ProvenanceTrail() {
 
     return (
         <div className="container">
-            <div className="trail">
-                <div className="trail-container">
-                    <h1>{resource}</h1>
-                </div>
+            <h1>{resource}</h1>
 
-                {trail && <ResourceProvenanceEvents resource={trail}/>}
-            </div>
+            {trail && <>
+                <ProvenanceTree trail={trail}/>
+
+                <div className="trail">
+                    <BaseResource resource={resource}/>
+                    <ResourceProvenanceEvents resource={trail}/>
+                </div>
+            </>}
+        </div>
+    );
+}
+
+function ProvenanceTree({trail}: { trail: Resource }) {
+    const container = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        createGraph(container.current!, trail);
+    }, [trail]);
+
+    return (
+        <div className="tree-container" ref={container}>
+            <svg className="tree"></svg>
+            <svg className="legend"></svg>
+            <div className="resource-info"></div>
         </div>
     );
 }
@@ -86,6 +124,22 @@ function ProvenanceCard({provenance, isSelected, onClick}: {
                 <dt>Where</dt>
                 <dd><ProvWhere provenance={provenance}/></dd>
             </dl>
+        </div>
+    );
+}
+
+function BaseResource({resource}: { resource: string }) {
+    return (
+        <div className="trail-container">
+            <ul className="resources card">
+                <li className="selected">
+                    <span>{resource}</span>
+
+                    <a href={resource} target="_blank">
+                        Go to resource
+                    </a>
+                </li>
+            </ul>
         </div>
     );
 }
