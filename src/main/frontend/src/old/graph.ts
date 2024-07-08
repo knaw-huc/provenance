@@ -1,4 +1,5 @@
-import {select, hierarchy, tree} from "d3";
+import {select, hierarchy, tree} from 'd3';
+import {TrailType, Trail, TrailNode, isResource, Resource, Provenance, isProvenance} from '../interfaces.ts';
 
 const color = '#4682b4';
 const selectedColor = '#cfdeec';
@@ -70,14 +71,14 @@ async function withData() {
     if (atTime)
         params.append('at', atTime);
 
-    const trail = await (await fetch(`/trail?${params.toString()}`)).json();
+    const trail: Trail<TrailType> = await (await fetch(`/trail?${params.toString()}`)).json();
 
     createTree(trail);
     writeMetadata(trail);
 }
 
-function createTree(trail) {
-    const rect = document.querySelector('.container').getBoundingClientRect();
+function createTree(trail: Trail<TrailType>) {
+    const rect = document.querySelector('.container')!.getBoundingClientRect();
     const minWidth = Math.floor(rect.width);
     const height = 400;
 
@@ -108,8 +109,8 @@ function createTree(trail) {
     const leftWidth = ((width - 20) / totalHeight) * leftHierarchy.height;
     const rightWidth = ((width - 20) / totalHeight) * rightHierarchy.height;
 
-    const leftTree = tree().size([height - 20, -leftWidth]);
-    const rightTree = tree().size([height - 20, rightWidth]);
+    const leftTree = tree<TrailNode<TrailType>>().size([height - 20, -leftWidth]);
+    const rightTree = tree<TrailNode<TrailType>>().size([height - 20, rightWidth]);
 
     const leftNodes = leftTree(leftHierarchy);
     const rightNodes = rightTree(rightHierarchy);
@@ -122,7 +123,10 @@ function createTree(trail) {
     const leftMain = main.append('g').attr('transform', `translate(${leftWidth}, 0)`);
     const rightMain = main.append('g').attr('transform', `translate(${leftWidth}, 0)`);
 
-    for (const [isLeft, nodes, main] of [[true, leftNodes, leftMain], [false, rightNodes, rightMain]]) {
+    for (const isLeft of [true, false]) {
+        const nodes = isLeft ? leftNodes : rightNodes;
+        const main = isLeft ? leftMain : rightMain;
+
         nodes.x = height / 2;
 
         main.append('g')
@@ -136,10 +140,10 @@ function createTree(trail) {
             .attr('d', d =>
                 `M${d.y},${d.x}` +
                 `L${d.y + 25},${d.x}` +
-                `C${(d.y + d.parent.y) / 2},${d.x}` +
-                ` ${(d.y + d.parent.y) / 2},${d.parent.x}` +
-                ` ${d.parent.y - 25},${d.parent.x}` +
-                `L${d.parent.y},${d.parent.x}`
+                `C${(d.y + d.parent?.y!) / 2},${d.x}` +
+                ` ${(d.y + d.parent?.y!) / 2},${d.parent?.x}` +
+                ` ${d.parent?.y! - 25},${d.parent?.x}` +
+                `L${d.parent?.y},${d.parent?.x}`
             );
 
         main.append('g')
@@ -148,28 +152,28 @@ function createTree(trail) {
             .attr('stroke-width', 1)
             .attr('stroke-dasharray', 4)
             .selectAll('path')
-            .data(nodes.descendants().filter(d => d.data.type === 'resource' && d.data.provIdUpdate != null))
+            .data(nodes.descendants().filter(d => isResource(d.data) && d.data.provIdUpdate != null))
             .join('path')
-            .attr('d', d => {
-                let cur = d.parent;
-                while (cur != null && cur.data.id !== d.data.provIdUpdate)
-                    cur = d.parent?.parent;
-
-                if (cur !== null)
-                    cur = cur.parent;
-
-                if (cur != null)
-                    return `M${d.y},${d.x}` +
-                        `C${d.y},${d.x - 50}` +
-                        ` ${cur.y},${cur.x - 50}` +
-                        ` ${cur.y},${cur.x}`
-
-                return '';
-            });
+        // .attr('d', d => {
+        //     let cur = d.parent;
+        //     while (cur != null && cur.data.id !== d.data.provIdUpdate)
+        //         cur = d.parent?.parent;
+        //
+        //     if (cur !== null)
+        //         cur = cur.parent;
+        //
+        //     if (cur != null)
+        //         return `M${d.y},${d.x}` +
+        //             `C${d.y},${d.x - 50}` +
+        //             ` ${cur.y},${cur.x - 50}` +
+        //             ` ${cur.y},${cur.x}`
+        //
+        //     return '';
+        // });
 
         const resourceNode = main.append('g')
             .selectAll('g')
-            .data(nodes.descendants().filter(d => d.data.type === 'resource'))
+            .data(nodes.descendants().filter(d => isResource(d.data)))
             .join('g')
             .attr('transform', d => `translate(${d.y},${d.x})`);
 
@@ -180,17 +184,26 @@ function createTree(trail) {
             .attr('stroke-width', 2)
             .filter(d => d.depth !== 0)
             .style('cursor', 'pointer')
-            .on('mouseover', (e, d) => document.getElementsByClassName('resource-info')[0].innerText = d.data.resource)
-            .on('mouseout', _ => document.getElementsByClassName('resource-info')[0].innerText = '')
+            .on('mouseover', (e, d) => {
+                const elem = document.getElementsByClassName('resource-info')[0] as HTMLElement;
+                elem.innerText = (d.data as Resource).resource;
+            })
+            .on('mouseout', _ => {
+                const elem = document.getElementsByClassName('resource-info')[0] as HTMLElement;
+                elem.innerText = '';
+            })
             .on('click', (e, d) => {
                 const dates = [];
-                if (d.parent)
-                    dates.push(d.parent.data.date);
+                if (d.parent && isProvenance(d.parent.data))
+                    dates.push(Object.values(d.parent.data.records));
                 if (d.children)
-                    d.children.forEach(d => dates.push(d.data.date));
+                    d.children.forEach(d =>
+                        dates.push(Object.values((d.data as Provenance).records)));
                 dates.sort();
 
-                window.location.hash = dates.length > 0 ? `${d.data.resource};@${dates[0]}` : `${d.data.resource}`;
+                window.location.hash = dates.length > 0
+                    ? `${(d.data as Resource).resource};@${dates[0]}`
+                    : `${(d.data as Resource).resource}`;
                 e.preventDefault();
             });
 
@@ -212,11 +225,11 @@ function createTree(trail) {
             .attr('stroke-width', 2)
             .attr('transform', 'translate(0, -10) rotate(45)')
             .filter(d => d.depth !== 0);
-            // .style('cursor', 'pointer')
-            // .on('click', (e, d) => {
-            //     window.location.hash = `${d.data.combinedId}`;
-            //     e.preventDefault();
-            // });
+        // .style('cursor', 'pointer')
+        // .on('click', (e, d) => {
+        //     window.location.hash = `${d.data.combinedId}`;
+        //     e.preventDefault();
+        // });
 
         provenanceNode
             .filter(d => d.depth === 0)
@@ -237,28 +250,28 @@ function createTree(trail) {
     }
 }
 
-async function writeMetadata(trail) {
+async function writeMetadata(trail: Trail<TrailType>) {
     const root = document.getElementsByClassName('metadata')[0];
     while (root.firstChild)
-        root.removeChild(root.lastChild);
+        root.removeChild(root.lastChild!);
 
     const header = document.createElement('h1');
     const links = document.createElement('dl');
     root.append(header, links);
 
-    if (trail.sourceRoot.type === 'resource') {
+    if (isResource(trail.sourceRoot)) {
         header.innerText = trail.sourceRoot.resource;
 
         if (trail.sourceRoot.relations.length > 0)
             writeData(links, 'Is the result of events with provenance identifier',
                 trail.sourceRoot.relations.flatMap(source => Object.keys(source.records).map(rec => createProvenanceElem(root, rec))));
 
-        if (trail.targetRoot.relations.length > 0)
+        if (isResource(trail.targetRoot) && trail.targetRoot.relations.length > 0)
             writeData(links, 'Is used as input for events with provenance identifier',
                 trail.targetRoot.relations.flatMap(target => Object.keys(target.records).map(rec => createProvenanceElem(root, rec))));
     }
-    else {
-        header.innerText = 'Event with provenance id #' + trail.sourceRoot.id;
+    else if (isProvenance(trail.sourceRoot)) {
+        header.innerText = 'Event with provenance ids ' + Object.keys(trail.sourceRoot.records).map(id => `#${id}`).join(',');
 
         if (trail.sourceRoot.relations.length > 0)
             writeData(links, 'The event used the following resources as input',
@@ -266,7 +279,7 @@ async function writeMetadata(trail) {
 
         if (trail.targetRoot.relations.length > 0)
             writeData(links, 'Which resulted in the following resources',
-                trail.targetRoot.relations.map(target => createResourceElem(root, target)));
+                trail.targetRoot.relations.map(target => createResourceElem(root, target as Resource)));
 
         const provHeader = document.createElement('h2');
         provHeader.innerText = 'Provenance';
@@ -275,18 +288,18 @@ async function writeMetadata(trail) {
         root.append(provHeader, prov);
 
         provHeader.className = '';
-        document.querySelectorAll(`[data-prov-id="${trail.sourceRoot.id}"]`)
+        document.querySelectorAll(`[data-prov-id="${trail.sourceRoot.combinedId}"]`)
             .forEach(link => link.setAttribute('stroke', '#ccc'));
 
         while (prov.firstChild)
-            prov.removeChild(prov.lastChild);
+            prov.removeChild(prov.lastChild!);
 
-        prov.dataset.id = trail.sourceRoot.id;
+        // prov.dataset.id = trail.sourceRoot.combinedId;
 
-        document.querySelectorAll(`[data-prov-id="${trail.sourceRoot.id}"]`)
+        document.querySelectorAll(`[data-prov-id="${trail.sourceRoot.combinedId}"]`)
             .forEach(link => link.setAttribute('stroke', '#4682b4'));
 
-        const record = await (await fetch(`/prov/${trail.sourceRoot.id}`)).json();
+        const record = await (await fetch(`/prov/${trail.sourceRoot.combinedId}`)).json();
         if (record.who) writeData(prov, 'Who', record.who);
         if (record.where) writeData(prov, 'Where', record.where);
         if (record.when) writeData(prov, 'When', record.when);
@@ -302,7 +315,7 @@ async function writeMetadata(trail) {
     }
 }
 
-function createProvenanceElem(root, id) {
+function createProvenanceElem(root: Element, id: string) {
     const resourceLink = document.createElement('a');
     resourceLink.innerText = '#' + id;
     resourceLink.setAttribute('href', `#${id}`);
@@ -313,7 +326,7 @@ function createProvenanceElem(root, id) {
     return resourceElem;
 }
 
-function createResourceElem(root, data) {
+function createResourceElem(root: Element, data: Resource) {
     const resourceLink = document.createElement('a');
     resourceLink.innerText = data.resource;
     resourceLink.setAttribute('href', `#${data.resource}`);
@@ -324,7 +337,7 @@ function createResourceElem(root, data) {
     return resourceElem;
 }
 
-function writeData(parent, header, values) {
+function writeData(parent: Element, header: string, values: string | (string | Element)[]) {
     const headerElem = document.createElement('dt');
     headerElem.innerText = header;
 

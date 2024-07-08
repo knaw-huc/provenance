@@ -1,5 +1,5 @@
 import {useEffect, useRef} from 'react';
-import createGraph from './graph.js';
+import createGraph from './graph.ts';
 import './style.css';
 
 export default function Provenance() {

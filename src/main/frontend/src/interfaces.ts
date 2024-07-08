@@ -1,3 +1,8 @@
+export interface Trail<R> {
+    sourceRoot: TrailNode<R>;
+    targetRoot: TrailNode<R>;
+}
+
 export interface TrailNode<R> {
     type: 'provenance' | 'resource';
     relation: string;
@@ -28,4 +33,14 @@ export interface ProvenanceData {
     howDelta: string;
     whyMotivation: string;
     whyProvenanceSchema: string;
+}
+
+export type TrailType = Resource | Provenance;
+
+export function isResource(node: TrailNode<TrailType>): node is Resource {
+    return node.type === 'resource';
+}
+
+export function isProvenance(node: TrailNode<TrailType>): node is Provenance {
+    return node.type === 'provenance';
 }
