@@ -44,6 +44,7 @@ CREATE TABLE users
     who_person text
 );
 
+CREATE INDEX prov_id_idx ON relations USING hash(prov_id);
 CREATE INDEX res_idx ON relations USING hash(res);
 CREATE INDEX is_source_res_idx ON relations USING btree(is_source, res);
 
