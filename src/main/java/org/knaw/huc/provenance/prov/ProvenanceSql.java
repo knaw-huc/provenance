@@ -8,13 +8,13 @@ interface ProvenanceSql {
             FROM provenance
             LEFT JOIN (
                 SELECT array_agg(res) AS source_res, array_agg(rel) AS source_rel
-                FROM relations
-                WHERE prov_id = :id AND is_source = true
+                FROM source_resources
+                WHERE prov_id = :id
             ) source ON true
             LEFT JOIN (
                 SELECT array_agg(res) AS target_res, array_agg(rel) AS target_rel
-                FROM relations
-                WHERE prov_id = :id AND is_source = false
+                FROM target_resources
+                WHERE prov_id = :id
             ) target ON true
             WHERE id = :id""";
 
@@ -22,26 +22,36 @@ interface ProvenanceSql {
             SELECT DISTINCT p.id, p.who_person, p.where_location, p.when_time, p.when_timestamp,
                             p.how_software, p.how_init, p.how_delta, p.why_motivation, p.why_provenance_schema,
                             source_res, source_rel, target_res, target_rel
-            FROM relations AS r
-            LEFT JOIN provenance AS p ON r.prov_id = p.id
+            FROM (
+                SELECT DISTINCT provenance.*
+                FROM provenance
+                INNER JOIN relations
+                ON provenance.id = relations.prov_id
+                WHERE res = :resource
+            ) AS p
             LEFT JOIN LATERAL (
                 SELECT array_agg(res) AS source_res, array_agg(rel) AS source_rel
-                FROM relations
-                WHERE prov_id = p.id AND is_source = true
+                FROM source_resources
+                WHERE prov_id = p.id AND res = :resource
             ) AS source ON TRUE
             LEFT JOIN LATERAL (
                 SELECT array_agg(res) AS target_res, array_agg(rel) AS target_rel
-                FROM relations
-                WHERE prov_id = p.id AND is_source = false
+                FROM target_resources
+                WHERE prov_id = p.id AND res = :resource
             ) AS target ON TRUE
-            WHERE r.res = :resource
             ORDER BY p.when_timestamp DESC
             LIMIT :limit OFFSET :offset""";
 
-    String SELECT_RESOURCES_SQL = """
+    String SELECT_SOURCE_RESOURCES_SQL = """
             SELECT res, rel
-            FROM relations
-            WHERE prov_id = :id AND is_source = :is_source
+            FROM source_resources
+            WHERE prov_id = :id
+            LIMIT :limit OFFSET :offset""";
+
+    String SELECT_TARGET_RESOURCES_SQL = """
+            SELECT res, rel
+            FROM target_resources
+            WHERE prov_id = :id
             LIMIT :limit OFFSET :offset""";
 
     String SELECT_TEMPLATES_SQL = """
@@ -54,8 +64,11 @@ interface ProvenanceSql {
             why_motivation, why_provenance_schema) VALUES
             (:who, :where, :when, :how_software, :how_init, :how_delta, :why_motivation, :why_prov)""";
 
-    String INSERT_RELATION_SQL =
-            "INSERT INTO relations (prov_id, is_source, res, rel) VALUES (:prov_id, :is_source, :res, :rel)";
+    String INSERT_SOURCES_SQL =
+            "INSERT INTO source_resources (prov_id, res, rel) VALUES (:prov_id, :res, :rel)";
+
+    String INSERT_TARGETS_SQL =
+            "INSERT INTO target_resources (prov_id, res, rel) VALUES (:prov_id, :res, :rel)";
 
     String UPDATE_SQL = """
             UPDATE provenance SET
@@ -69,7 +82,11 @@ interface ProvenanceSql {
             why_provenance_schema = coalesce(:why_prov, why_provenance_schema)
             WHERE id = :id""";
 
-    String UPSERT_RELATION_SQL = """ 
-            INSERT INTO relations (prov_id, is_source, res, rel) VALUES (:prov_id, :is_source, :res, :rel)
-            ON CONFLICT (prov_id, is_source, res) DO UPDATE SET rel = :rel""";
+    String UPSERT_SOURCES_SQL = """ 
+            INSERT INTO source_resources (prov_id, res, rel) VALUES (:prov_id, :res, :rel)
+            ON CONFLICT (prov_id, res) DO UPDATE SET rel = :rel""";
+
+    String UPSERT_TARGETS_SQL = """ 
+            INSERT INTO target_resources (prov_id, res, rel) VALUES (:prov_id, :res, :rel)
+            ON CONFLICT (prov_id, res) DO UPDATE SET rel = :rel""";
 }

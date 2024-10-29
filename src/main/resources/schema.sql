@@ -17,14 +17,22 @@ CREATE TABLE provenance
     why_provenance_schema text
 );
 
-CREATE TABLE relations
+CREATE TABLE source_resources
 (
     id        serial PRIMARY KEY,
     prov_id   integer NOT NULL REFERENCES provenance (id),
-    is_source boolean NOT NULL,
     res       text,
     rel       text,
-    UNIQUE (prov_id, is_source, res)
+    UNIQUE (prov_id, res)
+);
+
+CREATE TABLE target_resources
+(
+    id        serial PRIMARY KEY,
+    prov_id   integer NOT NULL REFERENCES provenance (id),
+    res       text,
+    rel       text,
+    UNIQUE (prov_id, res)
 );
 
 CREATE TABLE provenance_templates
@@ -45,12 +53,14 @@ CREATE TABLE users
 );
 
 CREATE INDEX when_timestamp_idx ON provenance USING btree(when_timestamp);
-CREATE INDEX prov_id_idx ON relations USING hash(prov_id);
-CREATE INDEX res_idx ON relations USING hash(res);
-CREATE INDEX is_source_res_idx ON relations USING btree(is_source, res);
+CREATE INDEX source_resources_prov_id_idx ON source_resources USING hash(prov_id);
+CREATE INDEX source_resources_res_idx ON source_resources USING hash(res);
+CREATE INDEX target_resources_prov_id_idx ON target_resources USING hash(prov_id);
+CREATE INDEX target_resources_res_idx ON target_resources USING hash(res);
 
-CREATE VIEW prov_relations AS
-SELECT relations.id AS id, prov_id, is_source, res, rel, when_timestamp AS prov_timestamp
-FROM relations
-INNER JOIN provenance
-ON provenance.id = relations.prov_id;
+CREATE VIEW relations AS
+SELECT 's' || id AS id, prov_id, TRUE AS is_source, res, rel
+FROM source_resources
+UNION ALL
+SELECT 't' || id AS id, prov_id, FALSE AS is_source, res, rel
+FROM target_resources;

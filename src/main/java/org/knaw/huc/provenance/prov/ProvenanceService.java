@@ -38,9 +38,8 @@ class ProvenanceService {
 
     public List<ProvenanceResource> getResourcesForProvenance(int id, boolean isSource, int limit, int offset) {
         try (Handle handle = JDBI.open()) {
-            return handle.createQuery(ProvenanceSql.SELECT_RESOURCES_SQL)
+            return handle.createQuery(isSource ? ProvenanceSql.SELECT_SOURCE_RESOURCES_SQL : ProvenanceSql.SELECT_TARGET_RESOURCES_SQL)
                     .bind("id", id)
-                    .bind("is_source", isSource)
                     .bind("limit", limit)
                     .bind("offset", offset)
                     .map(ProvenanceResource::mapFromResultSet)
@@ -71,8 +70,8 @@ class ProvenanceService {
                     .mapTo(Integer.class)
                     .one();
 
-            insertResources(handle, ProvenanceSql.INSERT_RELATION_SQL, id, true, provenance.source());
-            insertResources(handle, ProvenanceSql.INSERT_RELATION_SQL, id, false, provenance.target());
+            insertResources(handle, ProvenanceSql.INSERT_SOURCES_SQL, id, provenance.source());
+            insertResources(handle, ProvenanceSql.INSERT_TARGETS_SQL, id, provenance.target());
 
             return id;
         }
@@ -92,17 +91,15 @@ class ProvenanceService {
                     .bind("id", id)
                     .execute();
 
-            insertResources(handle, ProvenanceSql.UPSERT_RELATION_SQL, id, true, provenance.source());
-            insertResources(handle, ProvenanceSql.UPSERT_RELATION_SQL, id, false, provenance.target());
+            insertResources(handle, ProvenanceSql.UPSERT_SOURCES_SQL, id, provenance.source());
+            insertResources(handle, ProvenanceSql.UPSERT_TARGETS_SQL, id, provenance.target());
         }
     }
 
-    private static void insertResources(Handle handle, String sql, int id, boolean isSource,
-                                        List<ProvenanceResource> resourceInputs) {
+    private static void insertResources(Handle handle, String sql, int id, List<ProvenanceResource> resourceInputs) {
         PreparedBatch batch = handle.prepareBatch(sql);
         resourceInputs.forEach(target -> batch
                 .bind("prov_id", id)
-                .bind("is_source", isSource)
                 .bind("res", target.resource())
                 .bind("rel", target.relation())
                 .add());
