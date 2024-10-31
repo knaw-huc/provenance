@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+    <head>
+        <meta charset="utf-8">
+        <title>prov-rep</title>
+        <link href="css/style.css" rel="stylesheet">
+        <link rel="icon" type="image/x-icon" href="images/favicon.png">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    
+    <body>
+        <header class="flex items-center justify-between bg-rpBrand1-900 text-rpBrand1grey-400 py-3 px-4">
+            <div class="">prov-rep</div>
+            <nav class="" aria-label="Main site navigation"> <a href="index.html">Home</a>
+
+            </nav>
+        </header>
+        <div class="flex flex-col md:flex-row w-full max-w-[1200px] m-auto my-16">
+            <div class="">
+                <div class="bg-neutral-100 flex flex-row md:flex-col px-4  rounded py-6">
+                    <button class="whitespace-nowrap no-underline text-left" onclick="toggleVis('datatrail', 'show'); toggleVis('svgVis', 'hide')">Data trail</button>
+                    <button class="whitespace-nowrap no-underline text-left"
+                    onclick="toggleVis('datatrail', 'hide'); toggleVis('svgVis', 'show')">Flow</button>
+                </div>
+            </div>
+            <main class="px-4 md:px-10 w-full">
+                <!-- svg visualisation -->
+                <svg class="w-full h-full min-h-[800px] hidden" id="svgVis">
+                    <defs>
+                        <g id="IconDocTop">
+                            <rect x="0" y="0" width="26px" height="26px" class="fill-republicOrange-400 rotate-45 rounded"
+                            rx="5" ry="5" />
+                            <path stroke-linecap="round" stroke-linejoin="round" class="stroke-neutral-700 fill-none"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                            />
+                        </g>
+                        <g id="IconDoc">
+                            <rect x="1" y="-15" width="30px" height="30px" class="stroke-neutral-200 rotate-45 fill-white"
+                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" class="stroke-neutral-700 fill-none"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                            />
+                        </g>
+                        <g id="IconAction">
+                            <rect x="1" y="-15" width="30px" height="30px" class="stroke-neutral-200 rotate-45 fill-white"
+                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" class="stroke-neutral-700 fill-none"
+                            d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"
+                            />
+                        </g>
+                    </defs>
+                    <use xlink:href="#IconDocTop" x="150" y="150" />
+                    <use xlink:href="#IconDoc" x="100" y="100" />
+                    <use xlink:href="#IconAction" x="50" y="50" />
+                </svg>
+                <!-- data trail -->
+                <div class="border-l border-neutral-200 flex flex-col first:border-t relative"
+                id="datatrail">
+                    <div class="flex flex-col md:flex-row gap-6 border-b border-neutral-200 pb-16 flex-wrap lg:flex-nowrap pl-6 md:pl-0 relative  after:content-['▲'] after:absolute after:bottom-0 after:text-neutral-200 after:text-xl after:-translate-x-2 after:translate-y-2">
+                        <div class="w-1/2 md:w-1/12">
+                            <div class="p-1 border-neutral-200 rotate-45 -translate-x-10 md:-translate-x-4 inline-block bg-republicOrange-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 -rotate-45">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-11/12">
+                            <div class="font-bold text-xl">Session-1705-01-01-ordinaris-num-1</div> <a href="" class="text-sm text-neutral-500 after:content-['→'] after:pl-1 no-underline">https://annotation.republic-caf.diginfra.org/elasticsearch/session_lines/_doc/session-1705-01-01-ordinaris-num-1</a>
+
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6 border-b border-neutral-200 py-6 flex-wrap lg:flex-nowrap pl-6 md:pl-0 relative  after:content-['▲'] after:absolute after:bottom-0 after:text-neutral-200 after:text-xl after:-translate-x-2 after:translate-y-2">
+                        <div class="w-1/2 md:w-1/12">
+                            <div class="p-1 border-neutral-200 rotate-45 -translate-x-10 md:-translate-x-4 inline-block bg-white border">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 -rotate-45">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">9 Sep 2023</div>
+                        <div class="w-full md:w-4/12">Importing, parsing, extracting and visualising information from the Resolutions
+                            of the Dutch States General</div>
+                        <div class="w-1/2 md:w-2/12 flex items-center">
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">Script &rarr;</button>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 flex items-center gap-2">Info
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-900">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6 border-b border-neutral-200 py-6 flex-wrap lg:flex-nowrap pl-6 md:pl-0 relative bg-neutral-50 after:content-['▲'] after:absolute after:bottom-0 after:text-neutral-200 after:text-xl after:-translate-x-2 after:translate-y-2">
+                        <div class="w-1/2 md:w-1/12">
+                            <div class="p-1 border-neutral-200 rotate-45 -translate-x-10 md:-translate-x-4 inline-block bg-white border">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 -rotate-45">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">8 Sep 2023</div>
+                        <div class="w-full md:w-4/12">Importing, parsing, extracting and visualising information from the Resolutions
+                            of the Dutch States General</div>
+                        <div class="w-1/2 md:w-2/12 flex items-center">
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">Script &rarr;</button>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 flex items-center gap-2">Info
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-900">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="border-b border-neutral-200 flex flex-col md:flex-row pl-6 md:pl-0 gap-10 py-8 bg-neutral-50 shadow-xl">
+                        <div class="w-1/2 md:w-1/12"></div>
+                        <div class="w-full md:w-11/12 flex flex-col gap-4">
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">When</div>
+                                <div class="w-full md:w-9/12">8 september 2013</div>
+                            </div>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">How</div>
+                                <div class="w-full md:w-9/12">Importing, parsing, extracting and visualising information from the Resolutions
+                                    of the Dutch States General</div>
+                            </div>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">Why</div>
+                                <div class="w-full md:w-9/12">REPUBLIC CAF Pipeline deriving session_lines from pages</div>
+                            </div>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">Who</div>
+                                <div class="w-full md:w-9/12">orcid:0000-0002-0301-2029</div>
+                            </div>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">Where</div>
+                                <div class="w-full md:w-9/12">REPUBLIC CAF server</div>
+                            </div>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">Script</div> <a href="" class="w-full md:w-9/12 after:content-['→'] after:pl-1">https://github.com/HuygensING/republic-project/commit/581ff79d305262f3e4829b77ae5ee61d180e5037</a>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6 border-b border-neutral-200 py-6 flex-wrap lg:flex-nowrap pl-6 md:pl-0 relative  after:content-['▲'] after:absolute after:bottom-0 after:text-neutral-200 after:text-xl after:-translate-x-2 after:translate-y-2">
+                        <div class="w-1/2 md:w-1/12">
+                            <div class="p-1 border-neutral-200 rotate-45 -translate-x-10 md:-translate-x-4 inline-block bg-white border">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 -rotate-45">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">17 May 2023</div>
+                        <div class="w-full md:w-4/12">Importing, parsing, extracting and visualising information from the Resolutions
+                            of the Dutch States General</div>
+                        <div class="w-1/2 md:w-2/12 flex items-center">
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">Script &rarr;</button>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 flex items-center gap-2">Info
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-900">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6 border-b border-neutral-200 py-6 flex-wrap lg:flex-nowrap pl-6 md:pl-0 relative  after:content-['▲'] after:absolute after:bottom-0 after:text-neutral-200 after:text-xl after:-translate-x-2 after:translate-y-2">
+                        <div class="w-1/2 md:w-1/12">
+                            <div class="p-1 border-neutral-200 rotate-45 -translate-x-10 md:-translate-x-4 inline-block bg-white border">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 -rotate-45">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap "></div>
+                        <div class="w-9/12 columns-2">
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-15</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-16</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-16</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-17</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-18</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-19</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-20</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-21</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6 border-b border-neutral-200 py-6 flex-wrap lg:flex-nowrap pl-6 md:pl-0 relative  after:content-['▲'] after:absolute after:bottom-0 after:text-neutral-200 after:text-xl after:-translate-x-2 after:translate-y-2">
+                        <div class="w-1/2 md:w-1/12">
+                            <div class="p-1 border-neutral-200 rotate-45 -translate-x-10 md:-translate-x-4 inline-block bg-white border">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 -rotate-45">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">9 Sep 2023</div>
+                        <div class="w-full md:w-4/12">Importing, parsing, extracting and visualising information from the Resolutions
+                            of the Dutch States General</div>
+                        <div class="w-1/2 md:w-2/12 flex items-center">
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">Script &rarr;</button>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 flex items-center gap-2">Info
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-900">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6 border-b border-neutral-200 py-6 flex-wrap lg:flex-nowrap pl-6 md:pl-0 relative  after:content-['▲'] after:absolute after:bottom-0 after:text-neutral-200 after:text-xl after:-translate-x-2 after:translate-y-2">
+                        <div class="w-1/2 md:w-1/12">
+                            <div class="p-1 border-neutral-200 rotate-45 -translate-x-10 md:-translate-x-4 inline-block bg-white border">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 -rotate-45">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap ">8 Sep 2023</div>
+                        <div class="w-full md:w-4/12">Importing, parsing, extracting and visualising information from the Resolutions
+                            of the Dutch States General</div>
+                        <div class="w-1/2 md:w-2/12 flex items-center">
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">Script &rarr;</button>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 flex items-center gap-2">Info
+                            <button class="bg-neutral-100 hover:bg-neutral-200 transition text-sm rounded-full px-3 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-900">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6 border-b border-neutral-200 py-6 flex-wrap lg:flex-nowrap pl-6 md:pl-0 relative  after:content-['▲'] after:absolute after:bottom-0 after:text-neutral-200 after:text-xl after:-translate-x-2 after:translate-y-2">
+                        <div class="w-1/2 md:w-1/12">
+                            <div class="p-1 border-neutral-200 rotate-45 -translate-x-10 md:-translate-x-4 inline-block bg-white border">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 -rotate-45">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap "></div>
+                        <div class="w-9/12 columns-2">
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-15</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-16</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-16</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-17</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-18</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-19</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-20</div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 stroke-neutral-700 ">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="">NL-HaNA_1.01.02_3760_0009-page-21</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        <script src="js/toggleVis.js"></script>
+    </body>
+
+</html>
