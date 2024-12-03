@@ -1,12 +1,16 @@
 import {INode, IProvenance, IResource, ITemplate} from "../interfaces.ts";
 import {ResourcesNode} from "./ResourcesNode.tsx";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Provenances} from "./Provenances.tsx";
 
 
 export function Nodes({nodes, templates}: {nodes: INode[], templates: ITemplate[]}) {
 
     const [selectedNode, setSelectedNode] = useState<INode>(nodes[0]);
+
+    useEffect(() => {
+        setSelectedNode(nodes[0]);
+    }, [nodes])
 
     function renderNodes() {
         switch (selectedNode.type) {

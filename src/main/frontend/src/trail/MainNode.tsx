@@ -3,6 +3,7 @@ import {Nodes} from "./Nodes.tsx";
 
 export function MainNode({trail, templates}: {trail: IResource, templates: ITemplate[]}) {
 
+    console.log("MainNode trail: ", trail)
     const resourceParts = trail.resource.split('/')
     let name = resourceParts[resourceParts.length - 1]
     name = name.charAt(0).toUpperCase() + name.slice(1)

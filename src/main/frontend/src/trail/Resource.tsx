@@ -7,7 +7,6 @@ export function Resource({resource, selected, onClick}: {resource: IResource, se
 
     const resourceParts = resource.resource.split('/')
     let name = resourceParts[resourceParts.length - 1]
-    name = name.charAt(0).toUpperCase() + name.slice(1)
 
     const textClasses: string = selected ? "truncate font-bold" : "truncate"
 
@@ -20,6 +19,8 @@ export function Resource({resource, selected, onClick}: {resource: IResource, se
                     />
                 </svg>
             </div>
-            <div className={textClasses}>{name}</div>
+            <div className={textClasses}>{name}<br />
+                <span className={"text-sm"} title={resource.resource}>{resource.resource}</span>
+            </div>
         </div>
 }

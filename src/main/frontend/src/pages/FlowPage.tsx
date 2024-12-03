@@ -1,12 +1,23 @@
 import createGraph from "../graph.ts";
 import {useEffect, useRef} from "react";
-import {INode} from "../interfaces.ts";
+import {useNavigate, useOutletContext} from "react-router-dom";
+import {IResource} from "../interfaces.ts";
 
-export function FlowPage({trail}: { trail: INode }) {
+export function FlowPage() {
     const container = useRef<HTMLDivElement | null>(null);
+    const navigate = useNavigate();
+
+    const trail = useOutletContext<IResource>()
+    if (trail == null) {
+        return <></>
+    }
+
+    function onNavigate(resource: string) {
+        navigate('/' + encodeURIComponent(resource));
+    }
 
     useEffect(() => {
-        createGraph(container.current!, trail);
+        createGraph(container.current!, trail, onNavigate);
     }, [trail]);
 
     return (

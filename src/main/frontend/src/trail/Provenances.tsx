@@ -1,6 +1,6 @@
 import {IProvenance, ITemplate, SelectNodeFunction} from "../interfaces.ts";
 import {ProvenanceOption} from "./ProvenanceOption.tsx";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {ProvenanceNode} from "./ProvenanceNode.tsx";
 
 export function Provenances({provenances, templates, selectNode}: {provenances: IProvenance[], templates: ITemplate[], selectNode: SelectNodeFunction}) {
@@ -11,6 +11,10 @@ export function Provenances({provenances, templates, selectNode}: {provenances: 
         setSelectedProvenance(provenance);
         selectNode(provenance);
     }
+
+    useEffect(() => {
+        setSelectedProvenance(provenances[0]);
+    }, [provenances])
 
     function renderOptions() {
         if (provenances.length <= 1) {
@@ -26,21 +30,11 @@ export function Provenances({provenances, templates, selectNode}: {provenances: 
                 <div className="flex gap-4">
                     {provenances.map((provenance) => <ProvenanceOption
                         provenance={provenance}
+                        key={provenance.combinedId}
                         templates={templates}
                         selected={provenance == selectedProvenance}
                         onClick={() => {onClickOption(provenance)}}
                     />)}
-                    {/*<div className="py-8 relative">*/}
-                    {/*    <div className="absolute  border-neutral-300 w-1/2  top-0 bottom-0 "></div>*/}
-                    {/*    <button*/}
-                    {/*        className="flex justify-start text-left flex-col gap-2 w-full p-3 rounded-sm border border-neutral-200 bg-white hover:bg-neutral-100 transition relative">*/}
-                    {/*        <div className="text-sm font-bold">9 Sep 2023</div>*/}
-                    {/*        <div className="text-xs">Importing, parsing, extracting and visualising information from the*/}
-                    {/*            Resolutions*/}
-                    {/*            of the Dutch States General*/}
-                    {/*        </div>*/}
-                    {/*    </button>*/}
-                    {/*</div>*/}
                 </div>
             </div>
         </>

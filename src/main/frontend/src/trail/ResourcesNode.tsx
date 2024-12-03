@@ -27,7 +27,7 @@ export function ResourcesNode({resources, selectNode}: { resources: IResource[],
             <div className="w-1/2 md:w-2/12 font-bold text-sm whitespace-nowrap "></div>
             <div className="w-9/12 columns-2">
                 {resources.map((resource) => {
-                    return <Resource selected={resource.resource == selectedResource.resource} resource={resource} onClick={() => onClickResource(resource)} />
+                    return <Resource key={resource.resource} selected={resource.resource == selectedResource.resource} resource={resource} onClick={() => onClickResource(resource)} />
                 })}
             </div>
         </div>

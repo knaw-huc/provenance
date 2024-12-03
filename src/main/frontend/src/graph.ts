@@ -1,13 +1,9 @@
 import {select, hierarchy, tree} from 'd3';
-import {INode, IProvenance, IResource, isProvenance, isResource} from "./interfaces.ts";
-// import {TrailType, isResource, Resource, Provenance, isProvenance} from './interfaces.ts';
+import {INode, IResource, isResource} from "./interfaces.ts";
 
-const color = '#4682b4';
-const selectedColor = '#cfdeec';
-
-export default function createGraph(elem: HTMLElement, trailSources: INode, trailTargets?: INode) {
+export default function createGraph(elem: HTMLElement, trailSources: INode, onNavigate: ((resource: string) => void)) {
     createLegend(elem);
-    return createTree(elem, trailSources, trailTargets);
+    return createTree(elem, trailSources, onNavigate);
 }
 
 function createLegend(elem: HTMLElement) {
@@ -25,12 +21,6 @@ function createLegend(elem: HTMLElement) {
     resourceGroup.append('use')
         .attr('xlink:href', '#IconAction')
         .attr('transform', 'translate(-8, 0), scale(.8)')
-        // .attr('cx', 0)
-        // .attr('cy', 10)
-        // .attr('r', 8)
-        // .attr('fill', '#fff')
-        // .attr('stroke', color)
-        // .attr('stroke-width', 2);
 
     resourceGroup.append('text')
         .attr('x', 30)
@@ -46,14 +36,6 @@ function createLegend(elem: HTMLElement) {
     provGroup.append('use')
         .attr('xlink:href', '#IconDoc')
         .attr('transform', 'translate(-8, 0), scale(.8)')
-        // .attr('x', 0)
-        // .attr('y', 0)
-        // .attr('width', 14)
-        // .attr('height', 14)
-        // .attr('fill', '#fff')
-        // .attr('stroke', color)
-        // .attr('stroke-width', 2)
-        // .attr('transform', 'rotate(45)');
 
     provGroup.append('text')
         .attr('x', 30)
@@ -62,7 +44,7 @@ function createLegend(elem: HTMLElement) {
         .text('Provenance event');
 }
 
-function createTree(elem: HTMLElement, trailSources: INode) {
+function createTree(elem: HTMLElement, trailSources: INode, onNavigate: (resource: string) => void) {
     const rect = elem.getBoundingClientRect();
     const minWidth = Math.floor(rect.width);
     console.log('minWidth', minWidth);
@@ -94,19 +76,6 @@ function createTree(elem: HTMLElement, trailSources: INode) {
         .append('polygon')
         .attr('points', '0,0 8,3 0,6');
 
-    // const iconDocTop = defs.append('g')
-    //     .attr('id', 'IconDocTop')
-    //
-    // iconDocTop.append('rect')
-    //     .attr('x', 0)
-    //     .attr('y', 0)
-    //     .attr('width', '26px')
-    //     .attr('height', '26px')
-    //     .attr('class', 'fill-republicOrange-400 rounded')
-    //     .attr('rx', 5)
-    //     .attr('ry', 5)
-
-
     const leftTree = tree<INode>().size([width, height]);
 
     const leftNodes = leftTree(treeHierarchy);
@@ -125,17 +94,14 @@ function createTree(elem: HTMLElement, trailSources: INode) {
             .attr('fill', 'transparent')
             .attr('stroke', '#ccc')
             .attr('stroke-width', 2)
-            // .attr('marker-end', 'url(#arrowhead)')
             .selectAll('path')
             .data(nodes.descendants().slice(1))
             .join('path')
             .attr('d', d =>
                 `M${d.x},${d.y}` +
-                // `L${d.x},${d.y - 25}` +
                 `C${d.x},${d.parent?.y}` +
                 ` ${d.parent?.x!},${d.y}` +
                 ` ${d.parent?.x!},${d.parent?.y}`// +
-                // `L${d.parent?.x},${d.parent?.y}`
             );
 
         main.append('g')
@@ -146,22 +112,6 @@ function createTree(elem: HTMLElement, trailSources: INode) {
             .selectAll('path')
             .data(nodes.descendants().filter(d => isResource(d.data) && d.data.provIdUpdate != null))
             .join('path')
-        // .attr('d', d => {
-        //     let cur = d.parent;
-        //     while (cur != null && cur.data.id !== d.data.provIdUpdate)
-        //         cur = d.parent?.parent;
-        //
-        //     if (cur !== null)
-        //         cur = cur.parent;
-        //
-        //     if (cur != null)
-        //         return `M${d.y},${d.x}` +
-        //             `C${d.y},${d.x - 50}` +
-        //             ` ${cur.y},${cur.x - 50}` +
-        //             ` ${cur.y},${cur.x}`
-        //
-        //     return '';
-        // });
 
         const resourceNode = main.append('g')
             .selectAll('g')
@@ -172,10 +122,6 @@ function createTree(elem: HTMLElement, trailSources: INode) {
         resourceNode.append('use')
             .attr('xlink:href', d => d.depth === 0 ? '#IconDocTop' : '#IconDoc')
             .attr('transform', 'translate(-8, -8), scale(.8)')
-            // .attr('r', 8)
-            // .attr('fill', d => d.depth === 0 ? selectedColor : '#fff')
-            // .attr('stroke', color)
-            // .attr('stroke-width', 2)
             .filter(d => d.depth !== 0)
             .style('cursor', 'pointer')
             .on('mouseover', (_, d) => {
@@ -187,19 +133,20 @@ function createTree(elem: HTMLElement, trailSources: INode) {
                 elem.innerText = '';
             })
             .on('click', (e, d) => {
-                const dates = [];
-                if (d.parent && isProvenance(d.parent.data))
-                    dates.push(Object.values(d.parent.data.records));
-                if (d.children)
-                    d.children.forEach(d =>
-                        dates.push(Object.values((d.data as IProvenance).records)));
-                dates.sort();
+                // const dates = [];
+                // if (d.parent && isProvenance(d.parent.data))
+                //     dates.push(Object.values(d.parent.data.records));
+                // if (d.children)
+                //     d.children.forEach(d =>
+                //         dates.push(Object.values((d.data as IProvenance).records)));
+                // dates.sort();
 
-                const params = new URLSearchParams();
-                params.append('resource', (d.data as IResource).resource);
-                if (dates.length > 0)
-                    params.append('at', dates[0].toString());
-                window.location.search = params.toString();
+                // const params = new URLSearchParams();
+                // params.append('resource', (d.data as IResource).resource);
+                // if (dates.length > 0)
+                //     params.append('at', dates[0].toString());
+                // window.location.search = params.toString();
+                onNavigate((d.data as IResource).resource);
 
                 e.preventDefault();
             });
@@ -217,12 +164,6 @@ function createTree(elem: HTMLElement, trailSources: INode) {
         provenanceNode.append('use')
             .attr('xlink:href', '#IconAction')
             .attr('transform', 'translate(-8, -8), scale(.8)')
-            // .attr('width', 14)
-            // .attr('height', 14)
-            // .attr('fill', d => d.depth === 0 ? selectedColor : '#fff')
-            // .attr('stroke', color)
-            // .attr('stroke-width', 2)
-            // .attr('transform', 'translate(0, -10) rotate(45)')
             .filter(d => d.depth !== 0);
 
         document.getElementsByClassName('selected')[0].scrollIntoView({

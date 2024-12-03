@@ -4,8 +4,11 @@ import io.javalin.http.Context;
 import io.javalin.http.BadRequestResponse;
 import org.knaw.huc.provenance.auth.User;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.knaw.huc.provenance.prov.ProvenanceResource.getResourceList;
 import static org.knaw.huc.provenance.util.Util.*;
@@ -41,11 +44,22 @@ public class ProvenanceApi {
     }
 
     public void getProvenance(Context ctx) {
+        String acceptHeader = ctx.header("Accept");
+        boolean acceptsHtml = acceptHeader != null && acceptHeader.contains("text/html");
         int id = ctx.pathParamAsClass("id", Integer.class).get();
         Optional<Provenance> provenanceInput = service.getRecord(id);
         if (provenanceInput.isEmpty())
             throw new BadRequestResponse("Invalid id: " + ctx.pathParam("id"));
 
+        if (acceptsHtml) {
+            if (provenanceInput.get().target().size() == 1) {
+                String redirectLocation = provenanceInput.get().target().getFirst().resource();
+                ctx.redirect("/#" + URLEncoder.encode(redirectLocation, StandardCharsets.UTF_8));
+                return;
+            }
+            ctx.redirect("/#/target-selection/" + id);
+            return;
+        }
         ctx.json(provenanceInput.get());
     }
 

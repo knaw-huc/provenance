@@ -30,6 +30,7 @@ export interface IProvenance extends INode {
     type: NodeType.Provenance
     data: IProvenanceData
     combinedId: number
+    records: any[]
 }
 
 export interface IResource extends INode {
