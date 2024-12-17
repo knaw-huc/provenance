@@ -1,6 +1,9 @@
-import {NavLink, Outlet} from "react-router-dom";
+import {NavLink, Outlet, useNavigation} from "react-router-dom";
 
 export function Root() {
+
+    const navigation = useNavigation();
+    const isNavigating = Boolean(navigation.location);
 
     return <>
         <header className="bg-rpBrand1-900 text-republicOrange-400  px-4">
@@ -10,11 +13,10 @@ export function Root() {
                          loading="lazy"/>
                 </div>
                 <NavLink to={'/'} className="font-bold">Provenance</NavLink>
-                {/*<div className="">{trail.resource}</div>*/}
             </div>
         </header>
         <div className="flex flex-col md:flex-row w-full max-w-[1200px] m-auto my-16">
-            <Outlet />
+            {isNavigating ? <p>Loading...</p> : <Outlet />}
         </div>
     </>
 }
