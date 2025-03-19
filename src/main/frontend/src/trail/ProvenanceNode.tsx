@@ -26,7 +26,12 @@ export function ProvenanceNode({provenance, templates}: { provenance: IProvenanc
 
         return (<div
             className="border-b border-neutral-200 flex flex-col md:flex-row pl-6 md:pl-0 gap-10 py-8 bg-neutral-50 shadow-xl">
-            <div className="w-1/2 md:w-1/12"></div>
+            <div className="w-1/2 md:w-1/12 flex justify-center">
+                <ul className="text-xs text-neutral-500 italic">
+                    {Object.keys(provenance.records).map(id =>
+                        <li key={id}>#{id}</li>)}
+                </ul>
+            </div>
             <div className="w-full md:w-11/12 flex flex-col gap-4">
                 {
                     Object.entries(provenance.data).map(([key, value]) => {
